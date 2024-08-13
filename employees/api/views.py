@@ -177,27 +177,39 @@ class ManagerListView(APIView):
     @swagger_auto_schema(responses={200: ManagersListSerializer(many=True)},operation_summary="GET all Managers",operation_description="List all Managers (IsAuthenticated)",)
     def get(self, request):
         #companies = Company.objects.filter(tenant = request.user, deleted=False)
-        manager = Employee.objects.filter(tenant = request.user.tenant, deleted=False, is_manager=True, email_verified=True).order_by('name')
-        serializer = ManagersListSerializer(manager, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if request.user.tenant == 'sincro@adachr.com':
+            gettenant = request.query_params.get('tenant')        
+            manager = Employee.objects.filter(tenant = gettenant, deleted=False, is_manager=True, email_verified=True).order_by('name')
+            serializer = ManagersListSerializer(manager, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "Unauthorized access"}, status=status.HTTP_401_UNAUTHORIZED)             
     
 
     @swagger_auto_schema(request_body=ManagerCreateSerializer,responses={201: ManagerCreateSerializer(),400: 'Bad Request'},operation_summary="CREATE a Manager",operation_description="Create a manager (IsAuthenticated)",)        
     def post(self, request):
-        serializer = ManagerCreateSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
+        if request.user.tenant == 'sincro@adachr.com':    
+            gettenant = request.query_params.get('tenant')      
+            serializer = ManagerCreateSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):                
+                companies = serializer.validated_data.get('companies', [])
+                for company in companies:
+                    if company.tenant != gettenant:
+                        return Response(
+                            {"message": f"This Company does not belong to your tenant."},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                try:
+                    serializer.save(is_manager=True, tenant=gettenant, origin='admin')
+                except Exception as e:
+                    print(e)
+                    return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            tenant = serializer.validated_data.get('tenant')
-            companies = serializer.validated_data.get('companies', [])
-            for company in companies:
-                if company.tenant != tenant:
-                    return Response(
-                        {"message": f"This Company does not belong to your tenant."},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-            serializer.save(is_manager=True, tenant=request.user.tenant, origin='admin')
-            return Response(serializer.data, status=status.HTTP_201_CREATED)        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)                  
+                return Response(serializer.data, status=status.HTTP_201_CREATED)        
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)             
+        else:
+            return Response({"message": "Unauthorized access"}, status=status.HTTP_401_UNAUTHORIZED)             
+                     
 """                
             # Generar una contraseña aleatoria
             password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
@@ -380,14 +392,14 @@ class DownloadEmployeeTemplateView(APIView):
         writer = csv.writer(response)
         writer.writerow([
             'name', 'last_name', 'email', 'phone_number', 'date_of_birth', 
-            'hire_date', 'company', 'position', 'department' 
-            'address_line1', 'address_line2', 'state', 'zip_code', 
+            'hire_date', 'company', 'position', 'department',
+            'address_line1', 'address_line2', 'state', 'zip_code', 'supervisor'
             'country', 'city'
         ])
         writer.writerow([
             'required', 'required', 'required', 'optional', 'optional', 
-            'optional', 'required', 'optional', 'optional'
-            'required', 'optional', 'optional', 'optional', 'optional', 
+            'optional', 'required', 'optional', 'optional',
+            'required', 'optional', 'optional', 'optional', 'optional', 'optional', 
             'required', 'required'
         ])        
         return response

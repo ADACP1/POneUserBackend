@@ -13,8 +13,7 @@ from django.contrib.auth.admin import UserAdmin as BaseTenantAdmin
 class EmployeeAdmin(BaseTenantAdmin):   
     #pass
     list_display = (
-        'id','email', 'username', 'name', 'last_name', 'phone_number', 
-        'date_of_birth', 'hire_date', 'is_manager', 'is_active', 'email_verified'
+        'id','email', 'username', 'name', 'tenant', 'is_manager', 'is_active', 'email_verified'
     )
     
     fieldsets = (
@@ -24,7 +23,7 @@ class EmployeeAdmin(BaseTenantAdmin):
         ('Position & Department', {'fields': ('position', 'department')}),
         ('Address Info', {'fields': ('address_line1', 'address_line2', 'city', 'state', 'zip_code', 'country')}),
         ('Verification Info', {'fields': ('email_verified', 'email_verification_token', 'email_verification_token_expires')}),
-        ('Additional Info', {'fields': ('tenant', 'origin', 'is_manager')}),
+        ('Additional Info', {'fields': ('tenant', 'origin', 'is_manager','supervisor')}),
         ('Status & Dates', {'fields': ('is_active', 'deleted')}),
         ('Permissions', {'fields': ('is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),        

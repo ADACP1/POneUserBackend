@@ -61,6 +61,7 @@ class Employee(AbstractUser):
     registration_date = models.DateField(auto_now_add=True)
     deleted = models.BooleanField(default=False)    
     password = models.CharField(max_length=128)
+    supervisor = models.ForeignKey('self', on_delete=models.PROTECT, null=True, blank=True, related_name='employee_supervisor')
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -79,9 +80,7 @@ class Employee(AbstractUser):
         message = f'Click the following link to verify your email: {URLSERVICE}/api/v1/employees/verifyemail/{token}'
         from_email = 'notificacionesinternas@eninter.com'
         to_email = self.email
-
-        send_mail(subject, message, from_email, [to_email])                
-
+        send_mail(subject, message, from_email, [to_email])
 
         
 
