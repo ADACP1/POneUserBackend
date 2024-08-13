@@ -1,7 +1,7 @@
 from rest_framework import permissions
 from rest_framework_simplejwt.tokens import UntypedToken
 
-class IsMyAdmin(permissions.BasePermission):
+class IsMyUser(permissions.BasePermission):
     """
     Permiso personalizado para permitir solo usuarios con rol 'admin'.
     """

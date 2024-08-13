@@ -6,7 +6,8 @@ import pandas as pd
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.parsers import MultiPartParser, FormParser
-from employees.api.serializers import ManagersListSerializer,ManagerUpdateSerializer,ManagerCreateSerializer,DepartmentListSerializer,DepartmentUpdateSerializer,DepartmentCreateSerializer,PositionListSerializer,PositionUpdateSerializer,PositionCreateSerializer
+from employees.api.serializers import ManagersListSerializer,ManagerCreateSerializer,DepartmentListSerializer,DepartmentUpdateSerializer,DepartmentCreateSerializer,EmployeeUpdatePasswordSerializer
+from employees.api.serializers import PositionListSerializer,PositionUpdateSerializer,PositionCreateSerializer, EmployeeCreateSerializer,EmployeeListSerializer,EmployeeUpdateSerializer,EmployeeEmail_VerifiedSerializer,EmployeeTokenObtainPairSerializer
 from employees.models import Employee,Department,Position
 from companies.models import Company
 #from core.models import City,Country
@@ -16,8 +17,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 import csv
 from django.utils import timezone
-import random
-import string
+from rest_framework_simplejwt.views import TokenObtainPairView
 from django.core.mail import send_mail
 from django.contrib.auth.hashers import make_password
 
@@ -27,7 +27,7 @@ class DepartmentListView(APIView):
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
     @swagger_auto_schema(responses={200: DepartmentListSerializer(many=True)},operation_summary="GET all Departments",operation_description="List all departments (IsAuthenticated)",)
     def get(self, request):
-        department = Department.objects.filter(tenant = request.user, deleted=False)
+        department = Department.objects.filter(tenant = request.user.tenant, deleted=False).order_by('name')
         serializer = DepartmentListSerializer(department, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
      
@@ -40,7 +40,7 @@ class DepartmentListView(APIView):
             tenant = request.user.tenant
             companies = serializer.validated_data.get('company', [])
             for company in companies:
-                if company.tenant!= tenant:
+                if company.tenant!= tenant or company.deleted == True:
                     return Response(
                         {"message": f"Company {company.id} does not belong to your tenant."},
                         status=status.HTTP_400_BAD_REQUEST
@@ -57,7 +57,7 @@ class DepartmentView(APIView):
     @swagger_auto_schema(responses={200: DepartmentListSerializer()},operation_summary="GET a Department by id ",operation_description="List one department by id  (IsAuthenticated)",)
     def get(self, request, pk):
         try:
-            department = Department.objects.get(id=pk, tenant = request.user, deleted=False)
+            department = Department.objects.get(id=pk, tenant = request.user.tenant, deleted=False)
         except Department.DoesNotExist:
             return Response({"message": "Department does not exist"}, status=status.HTTP_404_NOT_FOUND)
         except Department.MultipleObjectsReturned:
@@ -102,7 +102,7 @@ class PositionListView(APIView):
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
     @swagger_auto_schema(responses={200: PositionListSerializer(many=True)},operation_summary="GET all Positions",operation_description="List all positions (IsAuthenticated)",)
     def get(self, request):
-        position = Position.objects.filter(tenant = request.user, deleted=False)
+        position = Position.objects.filter(tenant = request.user.tenant, deleted=False).order_by('name')
         serializer = PositionListSerializer(position, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -114,7 +114,7 @@ class PositionListView(APIView):
             tenant = request.user.tenant
             companies = serializer.validated_data.get('company', [])
             for company in companies:
-                if company.tenant != tenant:
+                if company.tenant!= tenant or company.deleted == True:
                     return Response(
                         {"message": f"Company {company.id} does not belong to your tenant."},
                         status=status.HTTP_400_BAD_REQUEST
@@ -131,7 +131,7 @@ class PositionView(APIView):
     @swagger_auto_schema(responses={200: PositionListSerializer()},operation_summary="GET a Position by id ",operation_description="List one position by id  (IsAuthenticated)",)
     def get(self, request, pk):
         try:
-            position = Position.objects.get(id=pk, tenant = request.user, deleted=False)
+            position = Position.objects.get(id=pk, tenant = request.user.tenant, deleted=False)
         except Position.DoesNotExist:
             return Response({"message": "Position does not exist"}, status=status.HTTP_404_NOT_FOUND)
         except Position.MultipleObjectsReturned:
@@ -177,7 +177,7 @@ class ManagerListView(APIView):
     @swagger_auto_schema(responses={200: ManagersListSerializer(many=True)},operation_summary="GET all Managers",operation_description="List all Managers (IsAuthenticated)",)
     def get(self, request):
         #companies = Company.objects.filter(tenant = request.user, deleted=False)
-        manager = Employee.objects.filter(tenant = request.user, deleted=False, is_manager=True)
+        manager = Employee.objects.filter(tenant = request.user.tenant, deleted=False, is_manager=True, email_verified=True).order_by('name')
         serializer = ManagersListSerializer(manager, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -186,158 +186,186 @@ class ManagerListView(APIView):
     def post(self, request):
         serializer = ManagerCreateSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            
-            tenant = request.user
-            print(request.user)
-            print(request.data)
+
+            tenant = serializer.validated_data.get('tenant')
             companies = serializer.validated_data.get('company', [])
             for company in companies:
-                print(company.tenant)
-                print(tenant)
                 if company.tenant != tenant:
                     return Response(
-                        {"message": f"Company {company.name} does not belong to your tenant."},
+                        {"message": f"This Company does not belong to your tenant."},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                
+            serializer.save(is_manager=True, tenant=request.user.tenant, origin='admin')
+            return Response(serializer.data, status=status.HTTP_201_CREATED)        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)                  
+"""                
             # Generar una contraseña aleatoria
             password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
             encrypted_password = make_password(password)
             
-            manager = serializer.save(tenant=request.user, is_manager=True, origin='admin', password=encrypted_password)
+            manager = serializer.save(is_manager=True, origin='admin', password=encrypted_password)
 
 
             # Enviar la contraseña por correo
             send_mail(
-                'Your Employee / Manager Account',
-                f'Hello {manager.name},\n\nYour account has been created. Here are your login details:\n\nUsername: {manager.email}\nPassword: {password}\n\nPlease change your password after logging in for the first time.',
+                'Your Manager Account needs to be verified',
+                #f'Hello {manager.name},\n\nYour account Manager has been created. Here are your login details:\n\nUsername: {manager.email}\nPassword: {password}\n\nPlease change your password after logging in for the first time.',
+                f'Hello {manager.name},\n\nYour account Manager has been created. Please click in this link to verify your email: http://localhost:8080/verify/{manager.email_verification_token}',
                 'notificacionesinternas@eninter.com',
                 [manager.email]
             )
+ """
 
-            
-            return Response(serializer.data, status=status.HTTP_201_CREATED)        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
     
-    
-    
-class ManagerView(APIView):
+class EmployeeListView(APIView):    
     permission_classes = [IsAuthenticated]
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
-    @swagger_auto_schema(responses={200: ManagersListSerializer(),404: 'Manager does not exist',500: 'General Error'},operation_summary="GET a Manager by id ",operation_description="List one Manager by id (IsAuthenticated)",)    
-    def get(self, request, pk):
+    @swagger_auto_schema(responses={200: EmployeeListSerializer(many=True)},operation_summary="GET all Employees",operation_description="List all Employees (IsAuthenticated)",)
+    def get(self, request):
+        employee = Employee.objects.filter(tenant = request.user.tenant, deleted=False).order_by('name')
+        serializer = EmployeeListSerializer(employee, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+    @swagger_auto_schema(request_body=EmployeeCreateSerializer,responses={201: EmployeeCreateSerializer(),400: 'Bad Request'},operation_summary="CREATE a Employee",operation_description="Create a employee (IsAuthenticated)",)        
+    def post(self, request):
+        serializer = EmployeeCreateSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+
+            tenant = request.user.tenant
+            companies = serializer.validated_data.get('company', [])
+            for company in companies:
+                if company.tenant != tenant:
+                    return Response(
+                        {"message": f"This Company does not belong to your tenant."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            serializer.save(is_manager=False, tenant=request.user.tenant, origin='user')
+            return Response(serializer.data, status=status.HTTP_201_CREATED)        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
+
+
+
+    
+class EmployeeView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    @swagger_auto_schema(responses={200: EmployeeListSerializer(),404: 'Employee does not exist',500: 'General Error'},operation_summary="GET Employee Data ",operation_description="List Employee Data logged in the system. (IsAuthenticated)",)    
+    def get(self, request):
         try:
             
-            manager = Employee.objects.get(id=pk, deleted=False, tenant=request.user, is_manager=True)
+            employee = Employee.objects.get(email=request.user)
 
         except Employee.DoesNotExist:
-            return Response({"message": "Manager does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Employee does not exist"}, status=status.HTTP_404_NOT_FOUND)
         except Employee.MultipleObjectsReturned:
-            return Response({"message": "Multiple Manager with the same id found"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"message": "Multiple Employees with the same id found"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        serializer = ManagersListSerializer(manager)
+        serializer = EmployeeListSerializer(employee)
         return Response(serializer.data, status=status.HTTP_200_OK)    
     
 
-    @swagger_auto_schema(request_body=ManagerUpdateSerializer,responses={200: ManagerUpdateSerializer(),404: 'Manager does not exist' ,400: 'Bad Request'},operation_summary="UPDATE a Manager by id",operation_description="Update one manager by id (IsAuthenticated)",)    
+    @swagger_auto_schema(request_body=EmployeeUpdateSerializer,responses={200: EmployeeUpdateSerializer(),404: 'Employee does not exist' ,400: 'Bad Request'},operation_summary="UPDATE Employee Data",operation_description="Update Employee Data logged in the system. (IsAuthenticated)",)    
     def put(self, request, pk):
         try:
-            manager = Employee.objects.get(id=pk, deleted=False, tenant=request.user, is_manager=True)
+            employee = Employee.objects.get(email=request.user)
         except Employee.DoesNotExist:
-            return Response({"message": "Manager does not exist"}, status=status.HTTP_404_NOT_FOUND)
-        serializer = ManagerUpdateSerializer(manager, request.data)
+            return Response({"message": "Employee does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = EmployeeUpdateSerializer(employee, request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK) 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
      
-    
-    @swagger_auto_schema(responses={200: 'The Manager has been deleted', 404:'Manager does not exist'},operation_summary="DELETE a Manager by id ",operation_description="Delete one Manager by id (IsAuthenticated)",)           
+    """
+    @swagger_auto_schema(responses={200: 'The Employee has been deleted', 404:'Employee does not exist'},operation_summary="DELETE a Employee by id ",operation_description="Delete one Employee by id (IsAuthenticated)",)           
     def delete(self, request, pk):
         try:
-            manager = Employee.objects.get(id=pk, deleted=False, tenant=request.user, is_manager=True)
+            employee = Employee.objects.get(id=pk, deleted=False, tenant=request.user.tenant)
         except Employee.DoesNotExist:
-            return Response({"message": "Manager does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Employee does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
-        manager.deleted = True
-        manager.save()
+        employee.deleted = True
+        employee.save()
 
-        return Response({"message": "The Manager has been deleted"},status=status.HTTP_200_OK)    
+        return Response({"message": "The Employee has been deleted"},status=status.HTTP_200_OK)    
+"""        
         
 
-class ManagerCompanyListView(APIView):
+class EmployeeCompanyListView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
-    @swagger_auto_schema(responses={200: CompanyListSerializer(many=True), 404: 'Manager not found'},operation_summary="GET all Companies from Manager",operation_description="List all Companies from a Manager (IsAuthenticated)",)    
+    @swagger_auto_schema(responses={200: CompanyListSerializer(many=True), 404: 'Employee not found'},operation_summary="GET all Companies from Employee",operation_description="List all Companies from a Employee (IsAuthenticated)",)    
     def get(self, request):
         try:
-            managers = Employee.objects.filter(tenant=request.user, deleted=False , is_manager=True)
+            employee = Employee.objects.filter(email=request.user.email, deleted=False)
+            print(employee)
         except Employee.DoesNotExist:
-            return Response({"message": "Manager not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
         
-        manager = managers.first()
-        companies =  manager.company.all()
+        employe = employee.first()
+        companies =  employe.company.all()
         serializer = CompanyListSerializer(companies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
-class ManagerCompanyListLiteView(APIView):
+class EmployeeCompanyListLiteView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
-    @swagger_auto_schema(responses={200: CompanyListLiteSerializer(many=True), 404: 'Manager not found'},operation_summary="GET all Companies from Manager Lite Version",operation_description="List all Companies from a Manager Lite Version(IsAuthenticated)",)    
+    @swagger_auto_schema(responses={200: CompanyListLiteSerializer(many=True), 404: 'Employee not found'},operation_summary="GET all Companies from Employee Lite Version",operation_description="List all Companies from a Employee Lite Version(IsAuthenticated)",)    
     def get(self, request):
         try:
-            managers = Employee.objects.filter(tenant=request.user, deleted=False , is_manager=True)
+            employee = Employee.objects.filter(tenant=request.user.tenant, deleted=False)
         except Employee.DoesNotExist:
-            return Response({"message": "Manager not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
         
-        manager = managers.first()
-        companies =  manager.company.all()
+        employe = employee.first()
+        companies =  employe.company.all()
         serializer = CompanyListLiteSerializer(companies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
     
     
-class RemoveCompanyFromManagerView(APIView):
+class RemoveCompanyFromEmployeeView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
-    @swagger_auto_schema(responses={200:'Company removed from manager successfully'},operation_summary="REMOVE Company from a Manager",operation_description="Remove one company from one Manager by id (IsAuthenticated)",)       
+    @swagger_auto_schema(responses={200:'Company removed from Employee successfully'},operation_summary="REMOVE Company from a Employee",operation_description="Remove one company from one Employee by id (IsAuthenticated)",)       
     def post(self, request, pk, company_id):
         try:
-            manager = Employee.objects.get(id=pk, tenant=request.user, deleted=False, is_manager=True)
-            company = Company.objects.get(id=company_id, tenant=request.user, deleted=False)
+            employee = Employee.objects.get(id=pk, tenant=request.user.tenant, deleted=False)
+            company = Company.objects.get(id=company_id, tenant=request.user.tenant, deleted=False)
         except Employee.DoesNotExist:
-            return Response({"message": "Manager not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
         except Company.DoesNotExist:
             return Response({"message": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        if company in manager.company.all():
-            manager.company.remove(company)
-            return Response({"message": "Company removed from manager successfully"}, status=status.HTTP_200_OK)    
+        if company in employee.company.all():
+            employee.company.remove(company)
+            return Response({"message": "Company removed from employee successfully"}, status=status.HTTP_200_OK)    
         else:
-            return Response({"message": "Company not found in manager"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Company not found in employee"}, status=status.HTTP_404_NOT_FOUND)
     
-class AddCompanyToManagerView(APIView):
+class AddCompanyToEmployeeView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
-    @swagger_auto_schema(responses={200:'Company added to manager successfully'},operation_summary="ADD Company to a Manager",operation_description="Add one company to one Manager by id (IsAuthenticated)",)           
+    @swagger_auto_schema(responses={200:'Company added to Employee successfully'},operation_summary="ADD Company to a Employee",operation_description="Add one company to one Employee by id (IsAuthenticated)",)           
     def post(self, request, pk, company_id):
         try:
-            manager = Employee.objects.get(id=pk, tenant=request.user, deleted=False, is_manager=True)
-            company = Company.objects.get(id=company_id, tenant=request.user, deleted=False)
+            employee = Employee.objects.get(id=pk, tenant=request.user.tenant, deleted=False)
+            company = Company.objects.get(id=company_id, tenant=request.user.tenant, deleted=False)
         except Employee.DoesNotExist:
-            return Response({"message": "Manager not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
         except Company.DoesNotExist:
             return Response({"message": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
-        if company in manager.company.all():
-            return Response({"message": "Company already added to manager"}, status=status.HTTP_404_NOT_FOUND)
+        if company in employee.company.all():
+            return Response({"message": "Company already added to employee"}, status=status.HTTP_404_NOT_FOUND)
         else:
-            manager.company.add(company)
-            return Response({"message": "Company added to manager successfully"}, status=status.HTTP_200_OK)
+            employee.company.add(company)
+            return Response({"message": "Company added to employee successfully"}, status=status.HTTP_200_OK)
 
 
 
@@ -373,7 +401,7 @@ class DownloadDepartmentTemplateView(APIView):
         response['Content-Disposition'] = 'attachment; filename="department_template.csv"'
         writer = csv.writer(response)
         writer.writerow(['name','company'])
-        writer.writerow(['required', 'required'])
+        writer.writerow(['required', 'required (company separated by |)'])
         return response
 
 class DownloadPositionTemplateView(APIView):
@@ -385,7 +413,7 @@ class DownloadPositionTemplateView(APIView):
         response['Content-Disposition'] = 'attachment; filename="position_template.csv"'
         writer = csv.writer(response)
         writer.writerow(['name','company'])
-        writer.writerow(['required', 'required'])
+        writer.writerow(['required', 'required (company separated by |)'])
         return response    
     
 
@@ -432,10 +460,10 @@ class UploadEmployeeFileView(APIView):
                 zip_code=row.get('zip_code'),
                 country=row.get('country'),
                 city=row.get('city'),
-                tenant=request.user,
+                tenant=request.user.tenant,
                 is_manager=False,
                 is_active=True,
-                origin='manager'
+                origin='import'
 
             )
 
@@ -473,19 +501,43 @@ class UploadDepartmentFileView(APIView):
         else:
             return Response({"message": "Unsupported file"}, status=status.HTTP_400_BAD_REQUEST)
 
-        for index, row in data.iterrows():
-            try:
+        tenant = request.user.tenant
+        try:
+            # Validar todas las compañías primero
+            for index, row in data.iterrows():
+                companies = str(row['company']).split('|')  # Asumiendo que las compañías están separadas por comas en el archivo
+                print(companies)
+                for company_id in companies:
+                    company = Company.objects.filter(id=company_id.strip(), tenant=tenant,deleted=False).first()
+                    print(company)
+                    if not company:
+                        return Response(
+                            {"message": f"The company '{company_id.strip()}' in row {index + 1} does not belong to your tenant."},
+                            status=status.HTTP_400_BAD_REQUEST
+                    )
+
+        # Si todas las validaciones son correctas, crear los departamentos
+
+            for index, row in data.iterrows():
                 department = Department.objects.create(
                     name=row['name'],
-                    tenant=request.user.email
+                    tenant=tenant
                 )
-                companies = str(row['company'])
-                department.company.set(companies)
+
+                companies = str(row['company']).split('|')
+                valid_companies = [
+                    Company.objects.get(id=company_id.strip(), tenant=tenant,deleted=False)
+                    for company_id in companies
+                ]
+
+                department.company.set(valid_companies)
                 department.save()
-            except Exception as e:
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"message": "Data imported successfully"}, status=status.HTTP_201_CREATED)
+
 
 
 class UploadPositionFileView(APIView):
@@ -515,19 +567,44 @@ class UploadPositionFileView(APIView):
         else:
             return Response({"message": "Unsupported file"}, status=status.HTTP_400_BAD_REQUEST)
 
-        for index, row in data.iterrows():
-            try:
+        tenant = request.user.tenant
+        try:
+            # Validar todas las compañías primero
+            for index, row in data.iterrows():
+                companies = str(row['company']).split('|')  # Asumiendo que las compañías están separadas por comas en el archivo
+                print(companies)
+                for company_id in companies:
+                    company = Company.objects.filter(id=company_id.strip(), tenant=tenant,deleted=False).first()
+                    print(company)
+                    if not company:
+                        return Response(
+                            {"message": f"The company '{company_id.strip()}' in row {index + 1} does not belong to your tenant."},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+
+        # Si todas las validaciones son correctas, crear los departamentos
+
+            for index, row in data.iterrows():
                 position = Position.objects.create(
                     name=row['name'],
-                    tenant=request.user
+                    tenant=tenant
                 )
-                companies = [Company.objects.get(id=company_id) for company_id in row['company'].split(',')]
-                position.company.set(companies)
+
+                companies = str(row['company']).split('|')
+                valid_companies = [
+                    Company.objects.get(id=company_id.strip(), tenant=tenant,deleted=False)
+                    for company_id in companies
+                ]
+
+                position.company.set(valid_companies)
                 position.save()
-            except Exception as e:
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"message": "Data imported successfully"}, status=status.HTTP_201_CREATED)
+
+
 
 
 
@@ -551,3 +628,48 @@ class EmployeeEmailVerificationView(APIView):
             return Response({'message': 'Employee Email verified successfully.'}, status=status.HTTP_200_OK)
         except Employee.DoesNotExist:
             return Response({'message': 'Invalid or expired token.'}, status=status.HTTP_400_BAD_REQUEST)   
+        
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = EmployeeTokenObtainPairSerializer    
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]  
+    @swagger_auto_schema(responses={200: 'Ok',400: 'Email verification required'},operation_summary="LOGIN Employee with check email verified",operation_description="Login Employee with check email verified",)      
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+
+        emailverify = Employee.objects.get(email=request.data['email']).email_verified
+
+        if emailverify==True: 
+            token = serializer.validated_data
+            print(token)      
+            return Response(token, status=status.HTTP_200_OK)      
+           
+        else:
+            return Response({"message": "Email verification required."}, status=status.HTTP_400_BAD_REQUEST)     
+           
+        
+
+class EmployeeUpdatePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    @swagger_auto_schema(request_body=EmployeeUpdatePasswordSerializer,responses={200:  'Password changed successfully.',400: 'Bad Request'},operation_summary="UPDATE Password Employee",operation_description="Update password Employee logged in the system. (IsAuthenticated)",)    
+    def patch(self, request):
+        employee = Employee.objects.get(id=request.user.id)
+        serializer = EmployeeUpdatePasswordSerializer(employee, request.data.tenant)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()            
+            return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK) 
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)       
+
+
+    
+class EmployeeEmail_VerifiedView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    @swagger_auto_schema(responses={200: EmployeeEmail_VerifiedSerializer()},operation_summary="GET Employee Data email verified",operation_description="Show Employee Data email verified. (IsAuthenticated)",)
+    def get(self, request):
+        serializer = EmployeeEmail_VerifiedSerializer(request.user.tenant)
+        return Response(serializer.data, status=status.HTTP_200_OK)         
+    

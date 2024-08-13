@@ -6,7 +6,7 @@ from companies.models import Company
 
 @admin.register(Position)
 class PositionsAdmin(admin.ModelAdmin):
-    list_display = ('id','name', 'tenant',  'created_at', 'updated_at')
+    list_display = ('id','name', 'tenant','deleted',  'created_at', 'updated_at')
     search_fields = ('id','name',)
     ordering = ('id','name',)
     readonly_fields = ('created_at','updated_at',)   
@@ -27,7 +27,7 @@ class PositionsAdmin(admin.ModelAdmin):
 
 @admin.register(Department)
 class PositionsAdmin(admin.ModelAdmin):
-    list_display = ('id','name', 'tenant', 'created_at', 'updated_at')
+    list_display = ('id','name', 'tenant', 'deleted', 'created_at', 'updated_at')
     search_fields = ('id','name',)
     ordering = ('id','name',)
     readonly_fields = ('created_at','updated_at',)   
@@ -48,7 +48,7 @@ class PositionsAdmin(admin.ModelAdmin):
 
 @admin.register(Employee)
 class EmployeesAdmin(admin.ModelAdmin):
-    list_display = ('id','name','tenant', 'email', 'created_at','updated_at','deleted','is_manager','origin')
+    list_display = ('id', 'name','tenant', 'email', 'created_at','updated_at','deleted','is_manager','email_verified','origin')
     ordering = ('id','name',)
     search_fields = ('name',)
     readonly_fields = ('created_at','updated_at',)

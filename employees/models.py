@@ -1,7 +1,11 @@
 from django.db import models
 from companies.models import Company
 from django.contrib.auth.models import AbstractUser
-
+from django.utils.crypto import get_random_string
+from django.core.mail import send_mail
+from datetime import timedelta
+from django.utils import timezone
+from PoneUserBackEnd.config	import URLSERVICE
 
 
 class Department(models.Model):
@@ -31,6 +35,7 @@ class Position(models.Model):
 
 class Employee(AbstractUser):
     email = models.EmailField(unique=True)
+    username = models.CharField(max_length=150, unique=False)
     name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)    
     email_verified = models.BooleanField(default=False)
@@ -64,6 +69,19 @@ class Employee(AbstractUser):
         verbose_name = 'Employee'
         verbose_name_plural = 'Employees'
 
+    def send_email_verification(self):
+        token = get_random_string(length=32)
+        self.email_verification_token = token
+        self.email_verification_token_expires = timezone.now() + timedelta(days=10)  # Puedes ajustar el tiempo de expiración        
+        self.save()
+
+        subject = 'User Email Verification'
+        message = f'Click the following link to verify your email: {URLSERVICE}/api/v1/employees/verifyemail/{token}'
+        from_email = 'notificacionesinternas@eninter.com'
+        to_email = self.email
+
+        send_mail(subject, message, from_email, [to_email])                
+
 
         
 
@@ -75,11 +93,3 @@ class EmployeeVerificationCode(models.Model):
 
     def __str__(self):
         return self.name
-    
-
-
-
-
-
-
- 
