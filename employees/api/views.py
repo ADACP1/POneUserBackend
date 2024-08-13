@@ -38,7 +38,7 @@ class DepartmentListView(APIView):
 
         if serializer.is_valid(raise_exception=True):
             tenant = request.user.tenant
-            companies = serializer.validated_data.get('company', [])
+            companies = serializer.validated_data.get('companies', [])
             for company in companies:
                 if company.tenant!= tenant or company.deleted == True:
                     return Response(
@@ -112,7 +112,7 @@ class PositionListView(APIView):
 
         if serializer.is_valid(raise_exception=True):
             tenant = request.user.tenant
-            companies = serializer.validated_data.get('company', [])
+            companies = serializer.validated_data.get('companies', [])
             for company in companies:
                 if company.tenant!= tenant or company.deleted == True:
                     return Response(
@@ -188,7 +188,7 @@ class ManagerListView(APIView):
         if serializer.is_valid(raise_exception=True):
 
             tenant = serializer.validated_data.get('tenant')
-            companies = serializer.validated_data.get('company', [])
+            companies = serializer.validated_data.get('companies', [])
             for company in companies:
                 if company.tenant != tenant:
                     return Response(
@@ -307,7 +307,7 @@ class EmployeeCompanyListView(APIView):
             return Response({"message": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
         
         employe = employee.first()
-        companies =  employe.company.all()
+        companies =  employe.companies.all()
         serializer = CompanyListSerializer(companies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -323,7 +323,7 @@ class EmployeeCompanyListLiteView(APIView):
             return Response({"message": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
         
         employe = employee.first()
-        companies =  employe.company.all()
+        companies =  employe.companies.all()
         serializer = CompanyListLiteSerializer(companies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -343,8 +343,8 @@ class RemoveCompanyFromEmployeeView(APIView):
         except Company.DoesNotExist:
             return Response({"message": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        if company in employee.company.all():
-            employee.company.remove(company)
+        if company in employee.companies.all():
+            employee.companies.remove(company)
             return Response({"message": "Company removed from employee successfully"}, status=status.HTTP_200_OK)    
         else:
             return Response({"message": "Company not found in employee"}, status=status.HTTP_404_NOT_FOUND)
@@ -361,10 +361,10 @@ class AddCompanyToEmployeeView(APIView):
             return Response({"message": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
         except Company.DoesNotExist:
             return Response({"message": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
-        if company in employee.company.all():
+        if company in employee.companies.all():
             return Response({"message": "Company already added to employee"}, status=status.HTTP_404_NOT_FOUND)
         else:
-            employee.company.add(company)
+            employee.companies.add(company)
             return Response({"message": "Company added to employee successfully"}, status=status.HTTP_200_OK)
 
 
@@ -400,7 +400,7 @@ class DownloadDepartmentTemplateView(APIView):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="department_template.csv"'
         writer = csv.writer(response)
-        writer.writerow(['name','company'])
+        writer.writerow(['name','companies'])
         writer.writerow(['required', 'required (company separated by |)'])
         return response
 
@@ -412,7 +412,7 @@ class DownloadPositionTemplateView(APIView):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="position_template.csv"'
         writer = csv.writer(response)
-        writer.writerow(['name','company'])
+        writer.writerow(['name','companies'])
         writer.writerow(['required', 'required (company separated by |)'])
         return response    
     
@@ -505,7 +505,7 @@ class UploadDepartmentFileView(APIView):
         try:
             # Validar todas las compañías primero
             for index, row in data.iterrows():
-                companies = str(row['company']).split('|')  # Asumiendo que las compañías están separadas por comas en el archivo
+                companies = str(row['companies']).split('|')  # Asumiendo que las compañías están separadas por comas en el archivo
                 print(companies)
                 for company_id in companies:
                     company = Company.objects.filter(id=company_id.strip(), tenant=tenant,deleted=False).first()
@@ -524,7 +524,7 @@ class UploadDepartmentFileView(APIView):
                     tenant=tenant
                 )
 
-                companies = str(row['company']).split('|')
+                companies = str(row['companies']).split('|')
                 valid_companies = [
                     Company.objects.get(id=company_id.strip(), tenant=tenant,deleted=False)
                     for company_id in companies
@@ -571,11 +571,10 @@ class UploadPositionFileView(APIView):
         try:
             # Validar todas las compañías primero
             for index, row in data.iterrows():
-                companies = str(row['company']).split('|')  # Asumiendo que las compañías están separadas por comas en el archivo
+                companies = str(row['companies']).split('|')  # Asumiendo que las compañías están separadas por comas en el archivo
                 print(companies)
                 for company_id in companies:
                     company = Company.objects.filter(id=company_id.strip(), tenant=tenant,deleted=False).first()
-                    print(company)
                     if not company:
                         return Response(
                             {"message": f"The company '{company_id.strip()}' in row {index + 1} does not belong to your tenant."},
@@ -590,7 +589,7 @@ class UploadPositionFileView(APIView):
                     tenant=tenant
                 )
 
-                companies = str(row['company']).split('|')
+                companies = str(row['companies']).split('|')
                 valid_companies = [
                     Company.objects.get(id=company_id.strip(), tenant=tenant,deleted=False)
                     for company_id in companies
@@ -642,7 +641,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
         if emailverify==True: 
             token = serializer.validated_data
-            print(token)      
             return Response(token, status=status.HTTP_200_OK)      
            
         else:

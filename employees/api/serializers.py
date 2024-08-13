@@ -46,7 +46,7 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'name', 'last_name', 'email', 'phone_number', 
             'date_of_birth', 'hire_date', 'company', 'position', 'department',
-            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','tenant'
+            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','tenant','companies'
         )
 
 class ManagersListSerializer(serializers.ModelSerializer):
@@ -54,8 +54,8 @@ class ManagersListSerializer(serializers.ModelSerializer):
         model = Employee
         fields = (
             'id', 'name', 'last_name', 'email', 'phone_number', 'company',
-            'position', 'department', 'is_manager', 'created_at', 'updated_at',
-            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country'
+            'position', 'department', 'is_manager',
+            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','companies'
         )
 
 
@@ -76,7 +76,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
         model = Employee
         fields = (
             'id', 'name', 'last_name', 'email', 'phone_number', 'company',
-            'position', 'department', 'is_manager', 'created_at', 'updated_at',
+            'position', 'department', 'is_manager',
             'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country'
         )
 
