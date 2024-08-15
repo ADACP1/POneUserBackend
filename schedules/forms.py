@@ -9,11 +9,13 @@ class ScheduleAdminForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        tenant = cleaned_data.get('tenant')
+        tenant = self.instance.tenant
         scheduledetails = cleaned_data.get('scheduledetails')
-        if scheduledetails is not None:
-            for detail in scheduledetails:
+
+        if scheduledetails:
+            for detail in scheduledetails.all():  # .all() para trabajar con queryset
                 if detail.tenant != tenant:
-                    raise ValidationError("All ScheduleDetails must belong to the same tenant as the Schedule. The tenant of scheduledetail is %s" % detail.tenant)
-        
+                    raise ValidationError(
+                        "All ScheduleDetails must belong to the same tenant as the Schedule. The tenant of schedule detail is %s" % detail.tenant
+                    )
         return cleaned_data

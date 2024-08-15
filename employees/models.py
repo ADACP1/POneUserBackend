@@ -2,10 +2,12 @@ from django.db import models
 from companies.models import Company
 from django.contrib.auth.models import AbstractUser
 from django.utils.crypto import get_random_string
-from django.core.mail import send_mail
 from datetime import timedelta
 from django.utils import timezone
 from PoneUserBackEnd.config	import URLSERVICE
+#from django.core.mail import send_mail
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 
 class Department(models.Model):
@@ -75,14 +77,38 @@ class Employee(AbstractUser):
         self.email_verification_token = token
         self.email_verification_token_expires = timezone.now() + timedelta(days=10)  # Puedes ajustar el tiempo de expiración        
         self.save()
-
-        subject = 'User Email Verification'
-        message = f'Click the following link to verify your email: {URLSERVICE}/api/v1/employees/verifyemail/{token}'
-        from_email = 'notificacionesinternas@eninter.com'
+        url = f'{URLSERVICE}/api/v1/employees/verifyemail/{token}'
+        subjecttext = 'User Email Verification'
+        message = f'Click <strong><a href="{url}">here</a></strong> to verify your email.'
+        #fromemailoriginal = 'notificacionesinternas@eninter.com'
+        fromemail = 'amatdany@gmail.com'
         to_email = self.email
-        send_mail(subject, message, from_email, [to_email])
 
+        #send_mail(subjecttext, message, fromemailoriginal, [to_email])        
+
+        # Configuración del correo con SendGrid
         
+
+        email = Mail(
+        from_email=fromemail,
+        to_emails=to_email,
+        subject=subjecttext,
+        html_content = message)
+        try:
+            sg = SendGridAPIClient('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')
+            response = sg.send(email)
+            # Verificar el código de estado de la respuesta
+            if response.status_code in range(200, 300):
+                print("Email sent successfully.")
+            else:
+                print(f"Failed to send email. Status code: {response.status_code}, Response body: {response.body}")
+        except Exception as e:
+            # Manejo de errores más detallado
+            print(f"An error occurred: {str(e)}")
+            if hasattr(e, 'body'):
+                print(f"Error body: {e.body}")
+            if hasattr(e, 'status_code'):
+                print(f"Error status code: {e.status_code}")
 
 class EmployeeVerificationCode(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.PROTECT)

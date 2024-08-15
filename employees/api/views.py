@@ -196,9 +196,17 @@ class ManagerListView(APIView):
                 for company in companies:
                     if company.tenant != gettenant:
                         return Response(
-                            {"message": f"This Company does not belong to your tenant."},
+                            {"message": f"This Company {company.id} in companies does not belong to your tenant."},
                             status=status.HTTP_400_BAD_REQUEST
                         )
+             
+                company = serializer.validated_data.get('company')                
+                if company.tenant != gettenant:
+                    return Response(
+                        {"message": f"This Company {company.id} does not belong to your tenant."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )                       
+                    
                 try:
                     serializer.save(is_manager=True, tenant=gettenant, origin='admin')
                 except Exception as e:
@@ -245,13 +253,19 @@ class EmployeeListView(APIView):
         if serializer.is_valid(raise_exception=True):
 
             tenant = request.user.tenant
-            companies = serializer.validated_data.get('company', [])
+            companies = serializer.validated_data.get('companies', [])
             for company in companies:
                 if company.tenant != tenant:
                     return Response(
-                        {"message": f"This Company does not belong to your tenant."},
+                        {"message": f"This Company {company.id} in companies does not belong to your tenant."},
                         status=status.HTTP_400_BAD_REQUEST
                     )
+            company = serializer.validated_data.get('company')                
+            if company.tenant != tenant:
+                return Response(
+                    {"message": f"This Company {company.id} does not belong to your tenant."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )                
             serializer.save(is_manager=False, tenant=request.user.tenant, origin='user')
             return Response(serializer.data, status=status.HTTP_201_CREATED)        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
@@ -307,7 +321,7 @@ class EmployeeView(APIView):
 """        
         
 
-class EmployeeCompanyListView(APIView):
+class EmployeeCompaniesListView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
     @swagger_auto_schema(responses={200: CompanyListSerializer(many=True), 404: 'Employee not found'},operation_summary="GET all Companies from Employee",operation_description="List all Companies from a Employee (IsAuthenticated)",)    
@@ -324,7 +338,7 @@ class EmployeeCompanyListView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
-class EmployeeCompanyListLiteView(APIView):
+class EmployeeCompaniesListLiteView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
     @swagger_auto_schema(responses={200: CompanyListLiteSerializer(many=True), 404: 'Employee not found'},operation_summary="GET all Companies from Employee Lite Version",operation_description="List all Companies from a Employee Lite Version(IsAuthenticated)",)    
@@ -338,6 +352,36 @@ class EmployeeCompanyListLiteView(APIView):
         companies =  employe.companies.all()
         serializer = CompanyListLiteSerializer(companies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class EmployeeCompanyListView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    @swagger_auto_schema(responses={200: CompanyListSerializer(many=True), 404: 'Employee not found'},operation_summary="GET Company from Employee",operation_description="Get Company from a Employee (IsAuthenticated)",)    
+    def get(self, request):
+        try:
+            employee = Employee.objects.get(email=request.user)
+            print(employee)
+        except Employee.DoesNotExist:
+            return Response({"message": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = CompanyListSerializer(employee.company)
+        return Response(serializer.data, status=status.HTTP_200_OK)    
+
+class EmployeeCompanyListLiteView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    @swagger_auto_schema(responses={200: CompanyListLiteSerializer(many=True), 404: 'Employee not found'},operation_summary="GET Company from Employee Lite Version",operation_description="Get Company from a Employee Lite Version(IsAuthenticated)",)    
+    def get(self, request):
+        try:
+            employee = Employee.objects.get(email=request.user)
+            print(employee)
+        except Employee.DoesNotExist:
+            return Response({"message": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = CompanyListLiteSerializer(employee.company)
+        return Response(serializer.data, status=status.HTTP_200_OK)   
+        
     
 
     

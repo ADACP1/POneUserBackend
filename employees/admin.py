@@ -49,6 +49,20 @@ class EmployeeAdmin(BaseTenantAdmin):
             else:
                 kwargs['queryset'] = Company.objects.none()
         return super().formfield_for_manytomany(db_field, request, **kwargs)
+    
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'supervisor':
+            obj_id = request.resolver_match.kwargs.get('object_id')
+            if obj_id:
+                try:
+                    employee = Employee.objects.get(pk=obj_id)
+                    # Filtrar solo los empleados que pertenecen al mismo tenant
+                    kwargs['queryset'] = Employee.objects.filter(tenant=employee.tenant)
+                except Employee.DoesNotExist:
+                    kwargs['queryset'] = Employee.objects.none()
+            else:
+                kwargs['queryset'] = Employee.objects.none()
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)    
 
 
 

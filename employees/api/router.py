@@ -1,5 +1,5 @@
 from django.urls import path
-from employees.api.views import ManagerListView,EmployeeListView,EmployeeView,EmployeeCompanyListView,EmployeeCompanyListLiteView,AddCompanyToEmployeeView,RemoveCompanyFromEmployeeView
+from employees.api.views import ManagerListView,EmployeeListView,EmployeeView,EmployeeCompanyListView,EmployeeCompanyListLiteView,EmployeeCompaniesListView,EmployeeCompaniesListLiteView,AddCompanyToEmployeeView,RemoveCompanyFromEmployeeView
 from employees.api.views import DepartmentListView,DepartmentView,PositionListView,PositionView, DownloadDepartmentTemplateView,DownloadEmployeeTemplateView,DownloadPositionTemplateView
 from employees.api.views import UploadDepartmentFileView,UploadEmployeeFileView,UploadPositionFileView, EmployeeEmailVerificationView,CustomTokenObtainPairView,EmployeeUpdatePasswordView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
@@ -12,8 +12,10 @@ urlpatterns = [
     path('auth/me/password',EmployeeUpdatePasswordView.as_view()),    
     path('managers', ManagerListView.as_view()),
     path('employees', EmployeeListView.as_view()),    
-    path('employees/companies', EmployeeCompanyListView.as_view()),
-    path('employees/companies/lite', EmployeeCompanyListLiteView.as_view()),    
+    path('employees/companies', EmployeeCompaniesListView.as_view()),
+    path('employees/companies/lite', EmployeeCompaniesListLiteView.as_view()),    
+    path('employees/company', EmployeeCompanyListView.as_view()),
+    path('employees/company/lite', EmployeeCompanyListLiteView.as_view()),       
     path('employees/<int:pk>/addcompany/<int:company_id>', AddCompanyToEmployeeView.as_view()),
     path('employees/<int:pk>/removecompany/<int:company_id>', RemoveCompanyFromEmployeeView.as_view()),
     path('employees/download-employee-template/', DownloadEmployeeTemplateView.as_view()),       

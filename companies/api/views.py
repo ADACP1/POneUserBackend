@@ -14,9 +14,7 @@ class CompanyListView(APIView):
     @swagger_auto_schema(responses={200: CompanyListSerializer(many=True)},operation_summary="GET all Companies",operation_description="List all Companies (IsAuthenticated)",)
     def get(self, request):        
         print(request.user) 
-        if request.user.tenant == 'sincro@adachr.com':
-            print('daniela')
-            print(request.user)
+        if request.user.tenant == 'sincro@adachr.com':            
             gettenant = request.query_params.get('tenant') 
             company = Company.objects.filter(deleted=False, tenant=gettenant)
             serializer = CompanyListSerializer(company, many=True)

@@ -117,6 +117,30 @@ class ScheduleListView(APIView):
     
 class ScheduleCreateView(APIView):
     @swagger_auto_schema(request_body=ScheduleCreateUpdateSerializer,responses={201: ScheduleCreateUpdateSerializer(),400: 'Bad request'},operation_summary="CREATE a Schedule",operation_description="Create a Schedule (IsAuthenticated)",)        
+    def post(self, request, *args, **kwargs):
+        serializer = ScheduleCreateUpdateSerializer(data=request.data)
+        if serializer.is_valid():
+            # Obtener el tenant del usuario autenticado
+            tenant = request.user.tenant  # Ajusta esto si `tenant` es diferente en tu modelo
+            print(tenant)
+
+            # Crear el Schedule con el tenant
+            schedule = serializer.save(tenant=tenant)
+            schedulename=schedule.name+' '+str(schedule.id)
+            
+            # Actualizar el tenant en los ScheduleDetail asociados
+            for detail in schedule.scheduledetails.all():
+                detail.name = schedulename
+                detail.tenant = tenant
+                detail.save()
+                
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+"""    
+class ScheduleCreateView(APIView):
+    @swagger_auto_schema(request_body=ScheduleCreateUpdateSerializer,responses={201: ScheduleCreateUpdateSerializer(),400: 'Bad request'},operation_summary="CREATE a Schedule",operation_description="Create a Schedule (IsAuthenticated)",)        
     def post(self, request):
         serializer = ScheduleCreateUpdateSerializer(data=request.data)
         if serializer.is_valid():
@@ -130,7 +154,7 @@ class ScheduleCreateView(APIView):
             serializer.save(tenant=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
-    
+"""    
 class ScheduleUpdateView(APIView):
     @swagger_auto_schema(request_body=ScheduleCreateUpdateSerializer,responses={200: ScheduleCreateUpdateSerializer(),404: 'Schedule does not exist' ,400: 'Bad Request'},operation_summary="UPDATE a Schedule by id",operation_description="Update one Company by id (IsAuthenticated)",)    
     def put(self, request, pk):

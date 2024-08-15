@@ -45,7 +45,7 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
         model = Employee
         fields = (
             'id', 'name', 'last_name', 'email', 'phone_number', 
-            'date_of_birth', 'hire_date', 'company', 'position', 'department',
+            'company', 'position', 'department',
             'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','companies'
         )
 
@@ -54,8 +54,8 @@ class ManagersListSerializer(serializers.ModelSerializer):
         model = Employee
         fields = (
             'id', 'name', 'last_name', 'email', 'phone_number', 'company',
-            'position', 'department', 'is_manager',
-            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','companies','supervisor'
+            'position', 'department', 'is_manager','date_of_birth', 'hire_date', 
+            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','companies','supervisor','tenant'
         )
 
 
@@ -67,7 +67,7 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
         model = Employee
         fields = (
             'id', 'name', 'last_name', 'email', 'phone_number', 
-            'date_of_birth', 'hire_date', 'company', 'position', 'department',
+            'company', 'position', 'department',
             'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country'
         )
 
@@ -76,8 +76,8 @@ class EmployeeListSerializer(serializers.ModelSerializer):
         model = Employee
         fields = (
             'id', 'name', 'last_name', 'email', 'phone_number', 'company',
-            'position', 'department', 'is_manager',
-            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','supervisor'
+            'position', 'department', 'is_manager','date_of_birth', 'hire_date',
+            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','supervisor','tenant'
         )
 
 
@@ -157,6 +157,6 @@ class EmployeeTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Añade información adicional al token
         token['tenant_id'] = tenant.id 
         token['tenant_email'] = tenant.email 
-        token['role'] = 'user'          
+        token['role'] = 'manager' if tenant.is_manager else 'user'
 
         return token

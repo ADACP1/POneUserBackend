@@ -23,8 +23,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 
 #SECRET_KEY_ADMIN = 'django-insecure-h_+mx_l_x+@2s1-&*sb+6rz2r-^=uepbfw%e%4*s3)0t8nmmmu'
-#SECRET_KEY ='django-insecure-!7v7#1d3f1z&xuvz5^2!1-0^^kx9a9p9nx$7kj8^d_c!4q@6gz'
-SECRET_KEY ='django-insecure-h_+mx_l_x+@2s1-&*sb+6rz2r-^=uepbfw%e%4*s3)0t8nmmmu'
+SECRET_KEY ='django-insecure-!7v7#1d3f1z&xuvz5^2!1-0^^kx9a9p9nx$7kj8^d_c!4q@6gz'
+#SECRET_KEY ='django-insecure-h_+mx_l_x+@2s1-&*sb+6rz2r-^=uepbfw%e%4*s3)0t8nmmmu'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -231,6 +231,7 @@ AUTH_USER_MODEL = 'employees.Employee'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.eninter.com'
 EMAIL_PORT = 25
-EMAIL_USE_TLS = False
+EMAIL_USE_TLS = False  # Debe ser True
+EMAIL_USE_SSL = False  # Asegúrate de que esto sea False si estás usando TLS
 EMAIL_HOST_USER = 'notificacionesinternas@eninter.com'
 EMAIL_HOST_PASSWORD = 'NoW89Hk'

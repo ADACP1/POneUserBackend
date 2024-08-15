@@ -13,7 +13,7 @@ class ScheduleNotification(models.Model):
 
 class ScheduleDetail(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100, null=False)
+    name = models.CharField(max_length=100, blank=True, null=True)
     entry_hour = models.TimeField()
     exit_hour = models.TimeField()
     day_change = models.BooleanField(default=False)
@@ -30,7 +30,7 @@ class ScheduleDetail(models.Model):
     deleted = models.BooleanField(default=False)    
     
     def __str__(self):
-        return self.name    
+        return self.name or "Unnamed Detail" 
 
 class Schedule(models.Model):
     id = models.AutoField(primary_key=True)
@@ -39,7 +39,7 @@ class Schedule(models.Model):
     flexible = models.BooleanField(null=False)
     flex_minutes = models.PositiveIntegerField(default=0)
     notifie = models.BooleanField(null=False)
-    notification_ids = models.ManyToManyField(ScheduleNotification, blank=True)
+    notification_channels_ids = models.ManyToManyField(ScheduleNotification, blank=True)
     scheduledetails = models.ManyToManyField(ScheduleDetail)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
