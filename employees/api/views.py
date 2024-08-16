@@ -327,13 +327,12 @@ class EmployeeCompaniesListView(APIView):
     @swagger_auto_schema(responses={200: CompanyListSerializer(many=True), 404: 'Employee not found'},operation_summary="GET all Companies from Employee",operation_description="List all Companies from a Employee (IsAuthenticated)",)    
     def get(self, request):
         try:
-            employee = Employee.objects.filter(email=request.user.email, deleted=False)
-            print(employee)
+           employee = Employee.objects.get(email=request.user)
         except Employee.DoesNotExist:
             return Response({"message": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
         
-        employe = employee.first()
-        companies =  employe.companies.all()
+    
+        companies =  employee.companies.all()
         serializer = CompanyListSerializer(companies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -344,12 +343,12 @@ class EmployeeCompaniesListLiteView(APIView):
     @swagger_auto_schema(responses={200: CompanyListLiteSerializer(many=True), 404: 'Employee not found'},operation_summary="GET all Companies from Employee Lite Version",operation_description="List all Companies from a Employee Lite Version(IsAuthenticated)",)    
     def get(self, request):
         try:
-            employee = Employee.objects.filter(tenant=request.user.tenant, deleted=False)
+            employee = Employee.objects.get(email=request.user)
         except Employee.DoesNotExist:
             return Response({"message": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
         
-        employe = employee.first()
-        companies =  employe.companies.all()
+
+        companies =  employee.companies.all()
         serializer = CompanyListLiteSerializer(companies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
