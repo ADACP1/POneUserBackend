@@ -8,6 +8,7 @@ from PoneUserBackEnd.config	import URLSERVICE
 #from django.core.mail import send_mail
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+import os
 
 
 class Department(models.Model):
@@ -95,7 +96,8 @@ class Employee(AbstractUser):
         subject=subjecttext,
         html_content = message)
         try:
-            sg = SendGridAPIClient('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')
+            sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
+            sg = SendGridAPIClient(sendgrid_api_key)
             response = sg.send(email)
             # Verificar el código de estado de la respuesta
             if response.status_code in range(200, 300):
