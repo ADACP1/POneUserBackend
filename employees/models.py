@@ -81,7 +81,7 @@ class Employee(AbstractUser):
         subjecttext = 'User Email Verification'
         message = f'Click <strong><a href="{url}">here</a></strong> to verify your email.'
         #fromemailoriginal = 'notificacionesinternas@eninter.com'
-        fromemail = 'amatdany@gmail.com'
+        fromemail = 'adachremail@gmail.com'
         to_email = self.email
 
         #send_mail(subjecttext, message, fromemailoriginal, [to_email])        
