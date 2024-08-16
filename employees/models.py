@@ -95,7 +95,7 @@ class Employee(AbstractUser):
         subject=subjecttext,
         html_content = message)
         try:
-            sg = SendGridAPIClient('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')
+            sg = SendGridAPIClient('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')
             response = sg.send(email)
             # Verificar el código de estado de la respuesta
             if response.status_code in range(200, 300):
