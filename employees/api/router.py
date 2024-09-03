@@ -1,7 +1,7 @@
 from django.urls import path
 from employees.api.views import ManagerListView,EmployeeListView,EmployeeView,EmployeeCompanyListView,EmployeeCompanyListLiteView,EmployeeCompaniesListView,EmployeeCompaniesListLiteView,AddCompanyToEmployeeView,RemoveCompanyFromEmployeeView
-from employees.api.views import DepartmentListView,DepartmentView,PositionListView,PositionView, DownloadDepartmentTemplateView,DownloadEmployeeTemplateView,DownloadPositionTemplateView
-from employees.api.views import UploadDepartmentFileView,UploadEmployeeFileView,UploadPositionFileView, EmployeeEmailVerificationView,CustomTokenObtainPairView,EmployeeUpdatePasswordView
+from employees.api.views import DepartmentListView,DepartmentView,PositionListView,PositionView, DownloadDepartmentTemplateView,DownloadEmployeeTemplateView,DownloadPositionTemplateView,EmployeeListLiteView
+from employees.api.views import UploadDepartmentFileView,UploadEmployeeFileView,UploadPositionFileView, EmployeeEmailVerificationView,CustomTokenObtainPairView,EmployeeUpdatePasswordView,DepartmentByCompanyListView,PositionByCompanyListView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 urlpatterns = [
     path('auth/login', CustomTokenObtainPairView.as_view()),    
@@ -12,6 +12,7 @@ urlpatterns = [
     path('auth/me/password',EmployeeUpdatePasswordView.as_view()),    
     path('managers', ManagerListView.as_view()),
     path('employees', EmployeeListView.as_view()),    
+    path('employees/lite', EmployeeListLiteView.as_view()),        
     path('employees/companies', EmployeeCompaniesListView.as_view()),
     path('employees/companies/lite', EmployeeCompaniesListLiteView.as_view()),    
     path('employees/company', EmployeeCompanyListView.as_view()),
@@ -22,10 +23,12 @@ urlpatterns = [
     path('employees/upload-employee-template/', UploadEmployeeFileView.as_view()),              
     path('departments', DepartmentListView.as_view()),
     path('departments/<int:pk>', DepartmentView.as_view()), 
+    path('departments/bycompany/<int:company_id>', DepartmentByCompanyListView.as_view()),     
     path('department/download-department-template/', DownloadDepartmentTemplateView.as_view()),      
     path('department/upload-department-template/', UploadDepartmentFileView.as_view()),             
     path('positions', PositionListView.as_view()),
-    path('positions/<int:pk>', PositionView.as_view()),               
+    path('positions/<int:pk>', PositionView.as_view()),  
+    path('positions/bycompany/<int:company_id>', PositionByCompanyListView.as_view()),                      
     path('position/download-position-template/', DownloadPositionTemplateView.as_view()),                                    
     path('position/upload-position-template/', UploadPositionFileView.as_view()),       
     path('verifyemail/<str:token>', EmployeeEmailVerificationView.as_view()),          

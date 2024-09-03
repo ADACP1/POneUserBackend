@@ -1,10 +1,10 @@
 class AdminDatabaseRouter:
     def db_for_read(self, model, **hints):
         # Redirigir las lecturas de 'core' y 'tenants' a 'admindatabase'
-        if model._meta.app_label in ['core', 'tenants']:
+        if model._meta.app_label in ['core']:
             return 'admindatabase'
         return None
-
+"""
     def db_for_write(self, model, **hints):
         # Redirigir las escrituras de 'core' y 'tenants' a 'admindatabase'
         if model._meta.app_label in ['core', 'tenants']:
@@ -23,7 +23,7 @@ class AdminDatabaseRouter:
             return False
         return None
 
-"""
+
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
         # Permitir migraciones solo en 'admindatabase' para 'core' y 'tenants'

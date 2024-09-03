@@ -80,6 +80,10 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','supervisor','tenant'
         )
 
+class EmployeeListLiteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Employee
+        fields = ('id', 'name')    
 
 class EmployeeUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -155,8 +159,9 @@ class EmployeeTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(tenant)
 
         # Añade información adicional al token
-        token['tenant_id'] = tenant.id 
-        token['tenant_email'] = tenant.email 
+        token['user_id'] = tenant.id 
+        token['user'] = tenant.email 
+        token['tenant'] = tenant.tenant 
         token['role'] = 'manager' if tenant.is_manager else 'user'
 
         return token

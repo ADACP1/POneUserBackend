@@ -6,7 +6,7 @@ import pandas as pd
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.parsers import MultiPartParser, FormParser
-from employees.api.serializers import ManagersListSerializer,ManagerCreateSerializer,DepartmentListSerializer,DepartmentUpdateSerializer,DepartmentCreateSerializer,EmployeeUpdatePasswordSerializer
+from employees.api.serializers import ManagersListSerializer,ManagerCreateSerializer,DepartmentListSerializer,DepartmentUpdateSerializer,DepartmentCreateSerializer,EmployeeUpdatePasswordSerializer,EmployeeListLiteSerializer
 from employees.api.serializers import PositionListSerializer,PositionUpdateSerializer,PositionCreateSerializer, EmployeeCreateSerializer,EmployeeListSerializer,EmployeeUpdateSerializer,EmployeeEmail_VerifiedSerializer,EmployeeTokenObtainPairSerializer
 from employees.models import Employee,Department,Position
 from companies.models import Company
@@ -20,6 +20,17 @@ from django.utils import timezone
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.core.mail import send_mail
 from django.contrib.auth.hashers import make_password
+
+
+
+class DepartmentByCompanyListView(APIView):    
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]        
+    @swagger_auto_schema(responses={200: DepartmentListSerializer()},operation_summary="GET Departments by company ",operation_description="List departments by company  (IsAuthenticated)",)
+    def get(self, request, company_id):
+        department = Department.objects.filter(tenant = request.user.tenant, deleted=False, company =company_id).order_by('name')
+        serializer = DepartmentListSerializer(department, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class DepartmentListView(APIView):    
@@ -45,11 +56,10 @@ class DepartmentListView(APIView):
                         {"message": f"Company {company.id} does not belong to your tenant."},
                         status=status.HTTP_400_BAD_REQUEST
                         )            
-            serializer.save(tenant=request.user)
+            serializer.save(tenant=request.user.tenant)
             return Response(serializer.data, status=status.HTTP_201_CREATED)        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)        
-        
-    
+
 
 class DepartmentView(APIView):
     permission_classes = [IsAuthenticated]
@@ -68,7 +78,8 @@ class DepartmentView(APIView):
 
         serializer = DepartmentListSerializer(department)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+     
+
     @swagger_auto_schema(request_body=DepartmentUpdateSerializer,responses={200: DepartmentUpdateSerializer(),404: 'Department does not exist' ,400: 'Bad Request'},operation_summary="UPDATE a Department by id",operation_description="Update one Department by id (IsAuthenticated)",)    
     def put(self, request, pk):
         try:
@@ -95,7 +106,14 @@ class DepartmentView(APIView):
 
         return Response({"message": "The Department has been deleted"},status=status.HTTP_200_OK)        
     
-
+class PositionByCompanyListView(APIView):    
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]        
+    @swagger_auto_schema(responses={200: PositionListSerializer()},operation_summary="GET Positions by company ",operation_description="List Positions by company  (IsAuthenticated)",)
+    def get(self, request, company_id):
+        position = Position.objects.filter(tenant = request.user.tenant, deleted=False, company =company_id).order_by('name')
+        serializer = PositionListSerializer(position, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class PositionListView(APIView):    
     permission_classes = [IsAuthenticated]
@@ -119,7 +137,7 @@ class PositionListView(APIView):
                         {"message": f"Company {company.id} does not belong to your tenant."},
                         status=status.HTTP_400_BAD_REQUEST
                         )            
-            serializer.save(tenant=request.user)            
+            serializer.save(tenant=request.user.tenant)            
             return Response(serializer.data, status=status.HTTP_201_CREATED)        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)        
             
@@ -236,6 +254,14 @@ class ManagerListView(APIView):
             )
  """
 
+class EmployeeListLiteView(APIView):    
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    @swagger_auto_schema(responses={200: EmployeeListLiteSerializer(many=True)},operation_summary="GET all Employees Lite Version",operation_description="List all Employees Lite Version (IsAuthenticated)",)
+    def get(self, request):
+        employee = Employee.objects.filter(tenant = request.user.tenant, deleted=False).order_by('name')
+        serializer = EmployeeListLiteSerializer(employee, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
 class EmployeeListView(APIView):    
     permission_classes = [IsAuthenticated]

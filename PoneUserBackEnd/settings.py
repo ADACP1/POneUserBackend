@@ -38,6 +38,7 @@ CORS_ORIGIN_ALLOW_ALL = True # CORS
 # Application definition
 
 MY_APPS = [
+    'core',
     'employees',     
     'companies',         
     'schedules',   
@@ -130,7 +131,7 @@ DATABASES = {
     },
 }
 
-#DATABASE_ROUTERS = ['db_router.AdminDatabaseRouter']
+DATABASE_ROUTERS = ['db_router.AdminDatabaseRouter']
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
