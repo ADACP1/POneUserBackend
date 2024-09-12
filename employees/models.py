@@ -97,10 +97,13 @@ class Employee(AbstractUser):
         password += random.choices(all_characters, k=8 - 4)
 
         # Mezclar los caracteres para mayor seguridad
-        temp_password = random.shuffle(password)
+        random.shuffle(password)
+        temp_password = ''.join(password)
 
         #temp_password = get_random_string(length=12)  # Contraseña de 12 caracteres
         self.set_password(temp_password)  # Establecer contraseña encriptada        
+
+        
 
         self.save()
         url = f'{URLSERVICE}/api/v1/employees/verifyemail/{token}'
