@@ -6,9 +6,9 @@ import pandas as pd
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.parsers import MultiPartParser, FormParser
-from employees.api.serializers import ManagersListSerializer,ManagerCreateSerializer,DepartmentListSerializer,DepartmentUpdateSerializer,DepartmentCreateSerializer,EmployeeUpdatePasswordSerializer,EmployeeListLiteSerializer
-from employees.api.serializers import PositionListSerializer,PositionUpdateSerializer,PositionCreateSerializer, EmployeeCreateSerializer,EmployeeListSerializer,EmployeeUpdateSerializer,EmployeeEmail_VerifiedSerializer,EmployeeTokenObtainPairSerializer
-from employees.models import Employee,Department,Position
+from employees.api.serializers import ManagersListSerializer,ManagerCreateSerializer,DepartmentListSerializer,DepartmentUpdateSerializer,DepartmentCreateSerializer,EmployeeUpdatePasswordSerializer,EmployeeListLiteSerializer,EmployeeSendVerificationCodeSerializer
+from employees.api.serializers import PositionListSerializer,PositionUpdateSerializer,PositionCreateSerializer, EmployeeCreateSerializer,EmployeeListSerializer,EmployeeUpdateSerializer,EmployeeEmail_VerifiedSerializer,EmployeeTokenObtainPairSerializer,EmployeeUpdateForgetPasswordSerializer
+from employees.models import Employee,Department,Position,EmployeeVerificationCode
 from companies.models import Company
 #from core.models import City,Country
 from companies.api.serializers import CompanyListSerializer,CompanyListLiteSerializer
@@ -20,7 +20,10 @@ from django.utils import timezone
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.core.mail import send_mail
 from django.contrib.auth.hashers import make_password
-
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+from django.utils.crypto import get_random_string
+import os
 
 
 class DepartmentByCompanyListView(APIView):    
@@ -735,12 +738,25 @@ class EmployeeUpdatePasswordView(APIView):
     @swagger_auto_schema(request_body=EmployeeUpdatePasswordSerializer,responses={200:  'Password changed successfully.',400: 'Bad Request'},operation_summary="UPDATE Password Employee",operation_description="Update password Employee logged in the system. (IsAuthenticated)",)    
     def patch(self, request):
         employee = Employee.objects.get(id=request.user.id)
-        serializer = EmployeeUpdatePasswordSerializer(employee, request.data.tenant)
+        serializer = EmployeeUpdatePasswordSerializer(employee, request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()            
             return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK) 
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)       
+    
+
+  
+class EmployeeUpdateForgetPasswordView(APIView):
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    @swagger_auto_schema(request_body=EmployeeUpdateForgetPasswordSerializer,responses={200:  'Password changed successfully.',400: 'Bad Request'},operation_summary="UPDATE Password Employee when forget password",operation_description="Update password Employee when forget password.",)    
+    def patch(self, request):
+        serializer = EmployeeUpdateForgetPasswordSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)      
 
 
     
@@ -752,3 +768,57 @@ class EmployeeEmail_VerifiedView(APIView):
         serializer = EmployeeEmail_VerifiedSerializer(request.user.tenant)
         return Response(serializer.data, status=status.HTTP_200_OK)         
     
+
+
+class EmployeeSendVerificationCodeView(APIView):
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]  
+    @swagger_auto_schema(request_body = EmployeeSendVerificationCodeSerializer, responses={200: 'Email verified successfully.',400: 'Bad Request'},operation_summary="SEND verification code",operation_description="Send verification code for reset password of Employee",)                
+    def post(self, request):
+        serializer = EmployeeSendVerificationCodeSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            try:
+                user = Employee.objects.get(email=email)
+            except Employee.DoesNotExist:
+                return Response({"message": "User with this email does not exist."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            EmployeeVerificationCode.objects.filter(employee=user).delete()
+
+            code = get_random_string(length=6, allowed_chars='0123456789')
+            EmployeeVerificationCode.objects.create(employee=user, code=code)
+
+
+
+            subjecttext = 'Your Verification Code'
+            message = f'Your verification code is {code}.'
+            fromemail = 'adachremail@gmail.com'
+            to_email = email
+            
+            email = Mail(
+            from_email=fromemail,
+            to_emails=to_email,
+            subject=subjecttext,
+            html_content = message)
+            try:
+                sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
+                sg = SendGridAPIClient(sendgrid_api_key)
+                response = sg.send(email)
+                # Verificar el código de estado de la respuesta
+                if response.status_code in range(200, 300):
+                    print("Email sent successfully.")
+                else:
+                    print(f"Failed to send email. Status code: {response.status_code}, Response body: {response.body}")
+            except Exception as e:
+                # Manejo de errores más detallado
+                print(f"An error occurred: {str(e)}")
+                if hasattr(e, 'body'):
+                    print(f"Error body: {e.body}")
+                if hasattr(e, 'status_code'):
+                    print(f"Error status code: {e.status_code}")            
+
+            
+            #send_mail(subject, message, from_email, [to_email])        
+
+            return Response({"message": "Verification code sent successfully."}, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    

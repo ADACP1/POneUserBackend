@@ -9,7 +9,7 @@ from PoneUserBackEnd.config	import URLSERVICE
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 import os
-
+import random
 
 class Department(models.Model):
     id = models.AutoField(primary_key=True)
@@ -76,11 +76,41 @@ class Employee(AbstractUser):
     def send_email_verification(self):
         token = get_random_string(length=32)
         self.email_verification_token = token
-        self.email_verification_token_expires = timezone.now() + timedelta(days=10)  # Puedes ajustar el tiempo de expiración        
+        self.email_verification_token_expires = timezone.now() + timedelta(days=10)  # Puedes ajustar el tiempo de expiración    
+
+
+        lower = 'abcdefghijklmnopqrstuvwxyz'
+        upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        digits = '0123456789'
+        special = '@!$&#%?¿*+-'
+
+        # Asegurar que la contraseña contenga al menos uno de cada tipo
+        password = [
+            random.choice(lower),   # Una minúscula
+            random.choice(upper),   # Una mayúscula
+            random.choice(digits),  # Un dígito
+            random.choice(special)  # Un carácter especial
+        ]
+
+        # Llenar el resto de la contraseña con una mezcla de los caracteres permitidos
+        all_characters = lower + upper + digits + special
+        password += random.choices(all_characters, k=8 - 4)
+
+        # Mezclar los caracteres para mayor seguridad
+        temp_password = random.shuffle(password)
+
+        #temp_password = get_random_string(length=12)  # Contraseña de 12 caracteres
+        self.set_password(temp_password)  # Establecer contraseña encriptada        
+
         self.save()
         url = f'{URLSERVICE}/api/v1/employees/verifyemail/{token}'
         subjecttext = 'User Email Verification'
-        message = f'Click <strong><a href="{url}">here</a></strong> to verify your email.'
+        message = f'''
+        Hello {self.name},<br><br>
+        Click <strong><a href="{url}">here</a></strong> to verify your email.<br><br>
+        Your temporary password is: <strong>{temp_password}</strong><br>
+        Please change it after logging in.
+        '''
         #fromemailoriginal = 'notificacionesinternas@eninter.com'
         fromemail = 'adachremail@gmail.com'
         to_email = self.email
@@ -116,7 +146,13 @@ class EmployeeVerificationCode(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.PROTECT)
     code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
-    is_used = models.BooleanField(default=False)        
+    #is_used = models.BooleanField(default=False)  
+    # 
+
+    def is_expired(self):
+        # Verifica si el código ha expirado (válido por 15 minutos)
+        expiration_time = self.created_at + timedelta(minutes=15)
+        return timezone.now() > expiration_time           
 
     def __str__(self):
-        return self.name
+        return self.code
