@@ -1,16 +1,18 @@
 from django.urls import path
 from employees.api.views import ManagerListView,EmployeeListView,EmployeeView,EmployeeCompanyListView,EmployeeCompanyListLiteView,EmployeeCompaniesListView,EmployeeCompaniesListLiteView,AddCompanyToEmployeeView,RemoveCompanyFromEmployeeView
-from employees.api.views import DepartmentListView,DepartmentView,PositionListView,PositionView, DownloadDepartmentTemplateView,DownloadEmployeeTemplateView,DownloadPositionTemplateView,EmployeeListLiteView,EmployeeSendVerificationCodeView,EmployeeUpdateForgetPasswordView
-from employees.api.views import UploadDepartmentFileView,UploadEmployeeFileView,UploadPositionFileView, EmployeeEmailVerificationView,CustomTokenObtainPairView,EmployeeUpdatePasswordView,DepartmentByCompanyListView,PositionByCompanyListView
+from employees.api.views import DepartmentListView,DepartmentView,PositionListView,PositionView, DownloadDepartmentTemplateView,DownloadEmployeeTemplateView,DownloadPositionTemplateView,EmployeeListLiteView,EmployeeSendVerificationCodeForgetView,EmployeeSendVerificationCodeChangeView,EmployeeUpdateForgetPasswordView
+from employees.api.views import UploadDepartmentFileView,UploadEmployeeFileView,UploadPositionFileView, EmployeeEmailVerificationView,CustomTokenObtainPairView,EmployeeUpdatePasswordView,DepartmentByCompanyListView,PositionByCompanyListView,EmployeeLiteView,EmployeeChangePreferedLanguageView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 urlpatterns = [
     path('auth/login', CustomTokenObtainPairView.as_view()),    
     path('auth/token/refresh',TokenRefreshView.as_view()),
     path('auth/token/verify',TokenVerifyView.as_view()),
     path('auth/me',EmployeeView.as_view()),
+    path('auth/me/lite',EmployeeLiteView.as_view()),    
     path('auth/me/emailverified',EmployeeEmailVerificationView.as_view()),    
     path('auth/me/password',EmployeeUpdatePasswordView.as_view()),    
-    path('auth/me/forgetpassword',EmployeeUpdateForgetPasswordView.as_view()),      
+    path('auth/me/forgetpassword',EmployeeUpdateForgetPasswordView.as_view()), 
+    path('auth/me/preferedlanguage',EmployeeChangePreferedLanguageView.as_view()),              
     path('managers', ManagerListView.as_view()),
     path('employees', EmployeeListView.as_view()),    
     path('employees/lite', EmployeeListLiteView.as_view()),        
@@ -33,5 +35,6 @@ urlpatterns = [
     path('position/download-position-template/', DownloadPositionTemplateView.as_view()),                                    
     path('position/upload-position-template/', UploadPositionFileView.as_view()),       
     path('verifyemail/<str:token>', EmployeeEmailVerificationView.as_view()),     
-    path('sendverificationcode', EmployeeSendVerificationCodeView.as_view()),       
+    path('sendverificationcodeforget', EmployeeSendVerificationCodeForgetView.as_view()),       
+    path('sendverificationcodechange', EmployeeSendVerificationCodeChangeView.as_view()),           
 ]

@@ -47,7 +47,7 @@ class ScheduleDetailListView(APIView):
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
     @swagger_auto_schema(responses={200: ScheduleDetailSerializer(many=True)},operation_summary="GET all Schedule Details",operation_description="List all Schedule Details (IsAuthenticated)",)
     def get(self, request):
-        scheduledetail = ScheduleDetail.objects.filter(deleted=False, tenant=request.user)
+        scheduledetail = ScheduleDetail.objects.filter(deleted=False, tenant=request.user.tenant)
         serializer = ScheduleDetailSerializer(scheduledetail, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -66,7 +66,7 @@ class ScheduleDetailView(APIView):
     @swagger_auto_schema(responses={200: ScheduleDetailSerializer(),404: 'Schedule Detail does not exist',500: 'General Error'},operation_summary="GET a Schedule Detail by id ",operation_description="List one Schedule Detail by id (IsAuthenticated)",)
     def get(self, request, pk):
         try:            
-            scheduledetail = ScheduleDetail.objects.get(id=pk, deleted=False, tenant=request.user)
+            scheduledetail = ScheduleDetail.objects.get(id=pk, deleted=False, tenant=request.user.tenant)
         except ScheduleDetail.DoesNotExist:
             return Response({"message": "Schedule Detail does not exist"}, status=status.HTTP_404_NOT_FOUND)
         except ScheduleDetail.MultipleObjectsReturned:
@@ -81,7 +81,7 @@ class ScheduleDetailView(APIView):
     @swagger_auto_schema(request_body=ScheduleDetailSerializer,responses={200: ScheduleDetailSerializer(),404: 'Schedule Detail does not exist' ,400: 'Bad Request'},operation_summary="UPDATE a Schedule Detail by id",operation_description="Update one Schedule Detail by id (IsAuthenticated)",)    
     def put(self, request, pk):
         try:
-            scheduledetail = ScheduleDetail.objects.get(id=pk, deleted=False, tenant=request.user)
+            scheduledetail = ScheduleDetail.objects.get(id=pk, deleted=False, tenant=request.user.tenant)
         except ScheduleDetail.DoesNotExist:
             return Response({"message": "Schedule Detail does not exist"}, status=status.HTTP_404_NOT_FOUND)
         serializer = ScheduleDetailSerializer(scheduledetail, request.data)
@@ -95,7 +95,7 @@ class ScheduleDetailView(APIView):
     @swagger_auto_schema(responses={200: 'The Schedule Detail has been deleted', 404:'Schedule Detail does not exist'},operation_summary="DELETE a Schedule Detail by id ",operation_description="Delete one Schedule Detail by id (IsAuthenticated)",)    
     def delete(self, request, pk):
         try:
-            scheduledetail = ScheduleDetail.objects.get(id=pk, deleted=False, tenant=request.user)
+            scheduledetail = ScheduleDetail.objects.get(id=pk, deleted=False, tenant=request.user.tenant)
         except scheduledetail.DoesNotExist:
             return Response({"message": "Schedule Detail does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -111,7 +111,7 @@ class ScheduleListView(APIView):
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
     @swagger_auto_schema(responses={200: ScheduleSerializer(many=True)},operation_summary="GET all Schedules",operation_description="List all Schedules (IsAuthenticated)",)
     def get(self, request):
-        schedule = Schedule.objects.filter(deleted=False, tenant=request.user)
+        schedule = Schedule.objects.filter(deleted=False, tenant=request.user.tenant)
         serializer = ScheduleSerializer(schedule, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -159,14 +159,14 @@ class ScheduleUpdateView(APIView):
     @swagger_auto_schema(request_body=ScheduleCreateUpdateSerializer,responses={200: ScheduleCreateUpdateSerializer(),404: 'Schedule does not exist' ,400: 'Bad Request'},operation_summary="UPDATE a Schedule by id",operation_description="Update one Company by id (IsAuthenticated)",)    
     def put(self, request, pk):
         try:
-            schedule = Schedule.objects.get(id=pk, deleted=False, tenant=request.user)
+            schedule = Schedule.objects.get(id=pk, deleted=False, tenant=request.user.tenant)
         except Schedule.DoesNotExist:
             return Response({"message": "Schedule does not exist"}, status=status.HTTP_404_NOT_FOUND)
         serializer = ScheduleCreateUpdateSerializer(schedule, request.data)
         if serializer.is_valid():
             # Verificar que todos los ScheduleDetails pertenezcan al mismo tenant
             schedule_details_ids = [detail.id for detail in serializer.validated_data['scheduledetails']]
-            schedule_details = ScheduleDetail.objects.filter(id__in=schedule_details_ids, tenant=request.user, deleted=False)
+            schedule_details = ScheduleDetail.objects.filter(id__in=schedule_details_ids, tenant=request.user.tenant, deleted=False)
 
             if schedule_details.count() != len(schedule_details_ids):
                 return Response({"message": "All ScheduleDetails must belong to the same tenant as the Schedule."}, status=status.HTTP_400_BAD_REQUEST)
@@ -181,7 +181,7 @@ class ScheduleView(APIView):
     @swagger_auto_schema(responses={200: ScheduleSerializer(),404: 'Schedule does not exist',500: 'General Error'},operation_summary="GET a Schedule by id ",operation_description="List one Schedule by id (IsAuthenticated)",)
     def get(self, request, pk):
         try:            
-            schedule = Schedule.objects.get(id=pk, deleted=False, tenant=request.user)
+            schedule = Schedule.objects.get(id=pk, deleted=False, tenant=request.user.tenant)
         except Schedule.DoesNotExist:
             return Response({"message": "Schedule does not exist"}, status=status.HTTP_404_NOT_FOUND)
         except Schedule.MultipleObjectsReturned:
@@ -197,7 +197,7 @@ class ScheduleView(APIView):
     @swagger_auto_schema(responses={200: 'The Schedule has been deleted', 404:'Schedule does not exist'},operation_summary="DELETE a Schedule by id ",operation_description="Delete one Schedule by id (IsAuthenticated)",)    
     def delete(self, request, pk):
         try:
-            schedule = Schedule.objects.get(id=pk, deleted=False, tenant=request.user)
+            schedule = Schedule.objects.get(id=pk, deleted=False, tenant=request.user.tenant)
         except schedule.DoesNotExist:
             return Response({"message": "Schedule does not exist"}, status=status.HTTP_404_NOT_FOUND)
 

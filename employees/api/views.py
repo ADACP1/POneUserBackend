@@ -6,7 +6,7 @@ import pandas as pd
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.parsers import MultiPartParser, FormParser
-from employees.api.serializers import ManagersListSerializer,ManagerCreateSerializer,DepartmentListSerializer,DepartmentUpdateSerializer,DepartmentCreateSerializer,EmployeeUpdatePasswordSerializer,EmployeeListLiteSerializer,EmployeeSendVerificationCodeSerializer
+from employees.api.serializers import ManagersListSerializer,ManagerCreateSerializer,DepartmentListSerializer,DepartmentUpdateSerializer,DepartmentCreateSerializer,EmployeeUpdatePasswordSerializer,EmployeeListLiteSerializer,EmployeeSendVerificationCodeSerializer,EmployeeLiteSerializer,EmployeeChangePreferedLanguageSerializer
 from employees.api.serializers import PositionListSerializer,PositionUpdateSerializer,PositionCreateSerializer, EmployeeCreateSerializer,EmployeeListSerializer,EmployeeUpdateSerializer,EmployeeEmail_VerifiedSerializer,EmployeeTokenObtainPairSerializer,EmployeeUpdateForgetPasswordSerializer
 from employees.models import Employee,Department,Position,EmployeeVerificationCode
 from companies.models import Company
@@ -334,6 +334,26 @@ class EmployeeView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK) 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+
+class EmployeeLiteView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    @swagger_auto_schema(responses={200: EmployeeLiteSerializer(),404: 'Employee does not exist',500: 'General Error'},operation_summary="GET Employee Data Lite",operation_description="List Employee Data Lite logged in the system. (IsAuthenticated)",)    
+    def get(self, request):
+        try:
+            
+            employee = Employee.objects.get(email=request.user)
+
+        except Employee.DoesNotExist:
+            return Response({"message": "Employee does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        except Employee.MultipleObjectsReturned:
+            return Response({"message": "Multiple Employees with the same id found"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        serializer = EmployeeLiteSerializer(employee)
+        return Response(serializer.data, status=status.HTTP_200_OK) 
      
     """
     @swagger_auto_schema(responses={200: 'The Employee has been deleted', 404:'Employee does not exist'},operation_summary="DELETE a Employee by id ",operation_description="Delete one Employee by id (IsAuthenticated)",)           
@@ -770,9 +790,9 @@ class EmployeeEmail_VerifiedView(APIView):
     
 
 
-class EmployeeSendVerificationCodeView(APIView):
+class EmployeeSendVerificationCodeForgetView(APIView):
     throttle_classes = [UserRateThrottle, AnonRateThrottle]  
-    @swagger_auto_schema(request_body = EmployeeSendVerificationCodeSerializer, responses={200: 'Email verified successfully.',400: 'Bad Request'},operation_summary="SEND verification code",operation_description="Send verification code for reset password of Employee",)                
+    @swagger_auto_schema(request_body = EmployeeSendVerificationCodeSerializer, responses={200: 'Verification code sent successfully.',400: 'Bad Request'},operation_summary="SEND verification code when FORGET password",operation_description="Send verification code for reset password when FORGET password of Employee",)                
     def post(self, request):
         serializer = EmployeeSendVerificationCodeSerializer(data=request.data)
         if serializer.is_valid():
@@ -822,3 +842,64 @@ class EmployeeSendVerificationCodeView(APIView):
             return Response({"message": "Verification code sent successfully."}, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
+    
+
+
+class EmployeeSendVerificationCodeChangeView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]  
+    @swagger_auto_schema(responses={200: 'Verification code sent successfully.',400: 'Bad Request'},operation_summary="SEND verification code when CHANGE password",operation_description="Send verification code for reset password when CHANGE password of Employee (IsAuthenticated)",)                
+    def post(self, request):
+                
+        EmployeeVerificationCode.objects.filter(employee=request.user).delete()
+
+        code = get_random_string(length=6, allowed_chars='0123456789')
+        EmployeeVerificationCode.objects.create(employee=request.user, code=code)
+
+
+
+        subjecttext = 'Your Verification Code'
+        message = f'Your verification code is {code}.'
+        fromemail = 'adachremail@gmail.com'
+        to_email = request.user.email
+        
+        email = Mail(
+        from_email=fromemail,
+        to_emails=to_email,
+        subject=subjecttext,
+        html_content = message)
+        try:
+            sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
+            sg = SendGridAPIClient(sendgrid_api_key)
+            response = sg.send(email)
+            # Verificar el código de estado de la respuesta
+            if response.status_code in range(200, 300):
+                print("Email sent successfully.")
+            else:
+                print(f"Failed to send email. Status code: {response.status_code}, Response body: {response.body}")
+        except Exception as e:
+            # Manejo de errores más detallado
+            print(f"An error occurred: {str(e)}")
+            if hasattr(e, 'body'):
+                print(f"Error body: {e.body}")
+            if hasattr(e, 'status_code'):
+                print(f"Error status code: {e.status_code}")            
+
+        
+        #send_mail(subject, message, from_email, [to_email])        
+
+        return Response({"message": "Verification code sent successfully."}, status=status.HTTP_200_OK)
+    
+
+class EmployeeChangePreferedLanguageView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    @swagger_auto_schema(request_body=EmployeeChangePreferedLanguageSerializer,responses={200:  'Prefered Language changed successfully.',400: 'Bad Request'},operation_summary="UPDATE Prefered Language ",operation_description="Update Prefered Language  logged in the system. (IsAuthenticated)",)    
+    def patch(self, request):
+        employee = Employee.objects.get(id=request.user.id)
+        serializer = EmployeeChangePreferedLanguageSerializer(employee, request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()            
+            return Response({'message': 'Prefered Language changed successfully.'}, status=status.HTTP_200_OK) 
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)           

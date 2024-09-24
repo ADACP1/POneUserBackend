@@ -59,6 +59,7 @@ class Employee(AbstractUser):
     zip_code = models.CharField(max_length=20, blank=True, null=True)
     country = models.IntegerField(blank=True, null=True)
     city = models.IntegerField(blank=True, null=True)
+    preferred_language = models.IntegerField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     origin = models.CharField(max_length=50)
     registration_date = models.DateField(auto_now_add=True)

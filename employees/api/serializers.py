@@ -81,6 +81,13 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','supervisor','tenant'
         )
 
+class EmployeeLiteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Employee
+        fields = (
+            'name', 'last_name', 'email', 'phone_number','address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country'
+        )        
+
 class EmployeeListLiteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
@@ -94,6 +101,13 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','supervisor',
             'position', 'department', 'is_active'
         )
+
+class EmployeeChangePreferedLanguageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Employee      
+        fields = (
+            'preferred_language',
+        )        
 
 class EmployeeEmail_VerifiedSerializer(serializers.ModelSerializer):
     class Meta:
