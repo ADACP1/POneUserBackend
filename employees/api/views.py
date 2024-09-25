@@ -200,7 +200,7 @@ class ManagerListView(APIView):
         #companies = Company.objects.filter(tenant = request.user, deleted=False)
         if request.user.tenant == 'sincro@adachr.com':
             gettenant = request.query_params.get('tenant')        
-            manager = Employee.objects.filter(tenant = gettenant, deleted=False, is_manager=True, email_verified=True).order_by('name')
+            manager = Employee.objects.filter(tenant = gettenant, deleted=False, is_manager=True).order_by('name')
             serializer = ManagersListSerializer(manager, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
@@ -237,7 +237,64 @@ class ManagerListView(APIView):
                 return Response(serializer.data, status=status.HTTP_201_CREATED)        
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)             
         else:
-            return Response({"message": "Unauthorized access"}, status=status.HTTP_401_UNAUTHORIZED)             
+            return Response({"message": "Unauthorized access"}, status=status.HTTP_401_UNAUTHORIZED)            
+
+
+class ManagerView(APIView):    
+    @swagger_auto_schema(request_body=ManagerCreateSerializer, responses={200: ManagerCreateSerializer(), 400: 'Bad Request'}, operation_summary="UPDATE a Manager", operation_description="Update a manager (IsAuthenticated)")
+    def put(self, request, pk):
+        if request.user.tenant == 'sincro@adachr.com':
+            gettenant = request.query_params.get('tenant')
+            try:
+                manager = Employee.objects.get(id=pk, tenant=gettenant, deleted=False, is_manager=True)
+            except Employee.DoesNotExist:
+                return Response({"message": "Manager not found or unauthorized"}, status=status.HTTP_404_NOT_FOUND)
+            
+            serializer = ManagerCreateSerializer(manager, data=request.data, partial=True)  # Partial permite actualizaciones parciales
+            if serializer.is_valid(raise_exception=True):
+                companies = serializer.validated_data.get('companies', [])
+                for company in companies:
+                    if company.tenant != gettenant:
+                        return Response(
+                            {"message": f"This Company {company.id} in companies does not belong to your tenant."},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                
+                company = serializer.validated_data.get('company')
+                if company and company.tenant != gettenant:
+                    return Response(
+                        {"message": f"This Company {company.id} does not belong to your tenant."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                try:
+                    serializer.save(is_manager=True, tenant=gettenant, origin='admin')
+                except Exception as e:
+                    print(e)
+                    return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"message": "Unauthorized access"}, status=status.HTTP_401_UNAUTHORIZED)
+
+    # Eliminar un Manager
+    @swagger_auto_schema(responses={204: 'No Content', 404: 'Not Found'}, operation_summary="DELETE a Manager", operation_description="Delete a manager (IsAuthenticated)")
+    def delete(self, request, pk):
+        if request.user.tenant == 'sincro@adachr.com':
+            gettenant = request.query_params.get('tenant')
+            try:
+                manager = Employee.objects.get(id=pk, tenant=gettenant, deleted=False, is_manager=True)
+            except Employee.DoesNotExist:
+                return Response({"message": "Manager not found or unauthorized"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Eliminar lógicamente al manager
+            manager.deleted = True
+            manager.save()
+
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response({"message": "Unauthorized access"}, status=status.HTTP_401_UNAUTHORIZED)         
                      
 """                
             # Generar una contraseña aleatoria

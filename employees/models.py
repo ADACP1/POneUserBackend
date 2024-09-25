@@ -1,5 +1,6 @@
 from django.db import models
 from companies.models import Company
+from schedules.models import Schedule
 from django.contrib.auth.models import AbstractUser
 from django.utils.crypto import get_random_string
 from datetime import timedelta
@@ -66,6 +67,7 @@ class Employee(AbstractUser):
     deleted = models.BooleanField(default=False)    
     password = models.CharField(max_length=128)
     supervisor = models.ForeignKey('self', on_delete=models.PROTECT, null=True, blank=True, related_name='employee_supervisor')
+    schedule = models.ForeignKey(Schedule, on_delete=models.PROTECT, null=True, blank=True, related_name='employee_schedule')
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

@@ -78,14 +78,14 @@ class EmployeeListSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'name', 'last_name', 'email', 'phone_number', 'company',
             'position', 'department', 'is_manager','date_of_birth', 'hire_date',
-            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','supervisor','tenant'
+            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','supervisor','tenant','preferred_language','schedule'
         )
 
 class EmployeeLiteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = (
-            'name', 'last_name', 'email', 'phone_number','address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country'
+            'name', 'last_name', 'email', 'phone_number','address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country',
         )        
 
 class EmployeeListLiteSerializer(serializers.ModelSerializer):
@@ -99,7 +99,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         fields = (
             'name', 'last_name', 'email', 'phone_number', 
             'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','supervisor',
-            'position', 'department', 'is_active'
+            'position', 'department', 'is_active','schedule'
         )
 
 class EmployeeChangePreferedLanguageSerializer(serializers.ModelSerializer):
