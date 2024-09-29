@@ -1,5 +1,5 @@
 from django.urls import path
-from schedules.api.views import (ScheduleNotificationListView, ScheduleNotificationView,ScheduleDetailListView, ScheduleDetailView,ScheduleListView, ScheduleView,ScheduleCreateView, ScheduleUpdateView)
+from schedules.api.views import (ScheduleNotificationListView, ScheduleNotificationView,ScheduleDetailListView, ScheduleDetailView,ScheduleListView, ScheduleView,ScheduleCreateView, ScheduleUpdateView,ScheduleMeView)
 
 urlpatterns = [
     # ScheduleNotification endpoints
@@ -15,4 +15,5 @@ urlpatterns = [
     path('schedules/<int:pk>', ScheduleView.as_view()),
     path('schedules/create', ScheduleCreateView.as_view()),    
     path('schedules/update/<int:pk>', ScheduleUpdateView.as_view()),     
+    path('schedules/me', ScheduleMeView.as_view()),    
 ]

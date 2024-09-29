@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from employees.models import Employee
 from schedules.models import ScheduleNotification, ScheduleDetail, Schedule
 from schedules.api.serializers import ScheduleNotificationSerializer,ScheduleDetailSerializer,ScheduleSerializer,ScheduleCreateUpdateSerializer
 from drf_yasg.utils import swagger_auto_schema
@@ -205,3 +206,21 @@ class ScheduleView(APIView):
         schedule.save()
 
         return Response({"message": "The Schedule has been deleted"},status=status.HTTP_200_OK)        
+    
+class ScheduleMeView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    @swagger_auto_schema(responses={200: ScheduleSerializer(),404: 'Schedule does not exist',500: 'General Error'},operation_summary="GET My Schedule ",operation_description="List My Schedule (IsAuthenticated)",)
+    def get(self, request):
+        try:            
+            employee = Employee.objects.get(email=request.user)
+            schedule = Schedule.objects.get(name=employee.schedule,  tenant=request.user.tenant)
+        except Schedule.DoesNotExist:
+            return Response({"message": "Schedule does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        except Schedule.MultipleObjectsReturned:
+            return Response({"message": "Multiple Schedules with the same id found"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        serializer = ScheduleSerializer(schedule)
+        return Response(serializer.data, status=status.HTTP_200_OK)        

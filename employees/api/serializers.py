@@ -69,7 +69,7 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'name', 'last_name', 'email', 'phone_number', 
             'company', 'position', 'department',
-            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country'
+            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','schedule'
         )
 
 class EmployeeListSerializer(serializers.ModelSerializer):
@@ -78,7 +78,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'name', 'last_name', 'email', 'phone_number', 'company',
             'position', 'department', 'is_manager','date_of_birth', 'hire_date',
-            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','supervisor','tenant','preferred_language','schedule'
+            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','supervisor','tenant','preferred_language','schedule','email_verified'
         )
 
 class EmployeeLiteSerializer(serializers.ModelSerializer):

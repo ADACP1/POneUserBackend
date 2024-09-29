@@ -1,5 +1,5 @@
 from django.urls import path
-from employees.api.views import ManagerListView,ManagerView,EmployeeListView,EmployeeView,EmployeeCompanyListView,EmployeeCompanyListLiteView,EmployeeCompaniesListView,EmployeeCompaniesListLiteView,AddCompanyToEmployeeView,RemoveCompanyFromEmployeeView
+from employees.api.views import ManagerListView,ManagerView,EmployeeListView,EmployeeView,EmployeeCompanyListView,EmployeeCompanyListLiteView,EmployeeCompaniesListView,EmployeeCompaniesListLiteView,AddCompanyToEmployeeView,RemoveCompanyFromEmployeeView,EmployeeByIdView,EmployeeStateView
 from employees.api.views import DepartmentListView,DepartmentView,PositionListView,PositionView, DownloadDepartmentTemplateView,DownloadEmployeeTemplateView,DownloadPositionTemplateView,EmployeeListLiteView,EmployeeSendVerificationCodeForgetView,EmployeeSendVerificationCodeChangeView,EmployeeUpdateForgetPasswordView
 from employees.api.views import UploadDepartmentFileView,UploadEmployeeFileView,UploadPositionFileView, EmployeeEmailVerificationView,CustomTokenObtainPairView,EmployeeUpdatePasswordView,DepartmentByCompanyListView,PositionByCompanyListView,EmployeeLiteView,EmployeeChangePreferedLanguageView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
@@ -13,9 +13,11 @@ urlpatterns = [
     path('auth/me/password',EmployeeUpdatePasswordView.as_view()),    
     path('auth/me/forgetpassword',EmployeeUpdateForgetPasswordView.as_view()), 
     path('auth/me/preferedlanguage',EmployeeChangePreferedLanguageView.as_view()),              
+    path('auth/me/state',EmployeeStateView.as_view()),      
     path('managers', ManagerListView.as_view()),
     path('managers/<int:pk>', ManagerView.as_view()),    
     path('employees', EmployeeListView.as_view()),    
+    path('employees/employeebyid/<int:pk>', EmployeeByIdView.as_view()),        
     path('employees/lite', EmployeeListLiteView.as_view()),        
     path('employees/companies', EmployeeCompaniesListView.as_view()),
     path('employees/companies/lite', EmployeeCompaniesListLiteView.as_view()),    

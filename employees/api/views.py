@@ -24,6 +24,7 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from django.utils.crypto import get_random_string
 import os
+from datetime import datetime
 
 
 class DepartmentByCompanyListView(APIView):    
@@ -380,7 +381,7 @@ class EmployeeView(APIView):
     
 
     @swagger_auto_schema(request_body=EmployeeUpdateSerializer,responses={200: EmployeeUpdateSerializer(),404: 'Employee does not exist' ,400: 'Bad Request'},operation_summary="UPDATE Employee Data",operation_description="Update Employee Data logged in the system. (IsAuthenticated)",)    
-    def put(self, request, pk):
+    def put(self, request):
         try:
             employee = Employee.objects.get(email=request.user)
         except Employee.DoesNotExist:
@@ -390,7 +391,52 @@ class EmployeeView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK) 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class EmployeeByIdView(APIView):    
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    @swagger_auto_schema(responses={200: EmployeeListSerializer(),404: 'Employee does not exist',500: 'General Error'},operation_summary="GET Employee Data by Id ",operation_description="List Employee Data logged in the system by Id. (IsAuthenticated)",)    
+    def get(self, request, pk):
+        try:
+            
+            employee = Employee.objects.get(id=pk, deleted=False, tenant=request.user.tenant)
 
+        except Employee.DoesNotExist:
+            return Response({"message": "Employee does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        except Employee.MultipleObjectsReturned:
+            return Response({"message": "Multiple Employees with the same id found"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        serializer = EmployeeListSerializer(employee)
+        return Response(serializer.data, status=status.HTTP_200_OK)   
+    
+        
+    @swagger_auto_schema(request_body=EmployeeUpdateSerializer,responses={200: EmployeeUpdateSerializer(),404: 'Employee does not exist' ,400: 'Bad Request'},operation_summary="UPDATE Employee Data by Id",operation_description="Update Employee Data logged in the system by Id. (IsAuthenticated)",)    
+    def put(self, request, pk):
+        try:
+            employee = Employee.objects.get(id=pk, deleted=False, tenant=request.user.tenant)
+        except Employee.DoesNotExist:
+            return Response({"message": "Employee does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = EmployeeUpdateSerializer(employee, request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK) 
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+        
+    @swagger_auto_schema(responses={200: 'The Employee has been deleted', 404:'Employee does not exist'},operation_summary="DELETE a Employee by Id ",operation_description="Delete one Employee by Id (IsAuthenticated)",)           
+    def delete(self, request, pk):
+        try:
+            employee = Employee.objects.get(id=pk, deleted=False, tenant=request.user.tenant)
+        except Employee.DoesNotExist:
+            return Response({"message": "Employee does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+        employee.deleted = True
+        employee.save()
+
+        return Response({"message": "The Employee has been deleted"},status=status.HTTP_200_OK)    
+    
 
 
 class EmployeeLiteView(APIView):
@@ -411,21 +457,7 @@ class EmployeeLiteView(APIView):
 
         serializer = EmployeeLiteSerializer(employee)
         return Response(serializer.data, status=status.HTTP_200_OK) 
-     
-    """
-    @swagger_auto_schema(responses={200: 'The Employee has been deleted', 404:'Employee does not exist'},operation_summary="DELETE a Employee by id ",operation_description="Delete one Employee by id (IsAuthenticated)",)           
-    def delete(self, request, pk):
-        try:
-            employee = Employee.objects.get(id=pk, deleted=False, tenant=request.user.tenant)
-        except Employee.DoesNotExist:
-            return Response({"message": "Employee does not exist"}, status=status.HTTP_404_NOT_FOUND)
-
-        employee.deleted = True
-        employee.save()
-
-        return Response({"message": "The Employee has been deleted"},status=status.HTTP_200_OK)    
-"""        
-        
+    
 
 class EmployeeCompaniesListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -960,3 +992,45 @@ class EmployeeChangePreferedLanguageView(APIView):
             return Response({'message': 'Prefered Language changed successfully.'}, status=status.HTTP_200_OK) 
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)           
+
+
+
+class EmployeeStateView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    @swagger_auto_schema(responses={200: '0,1,2,3,4,5',404: 'Employee does not exist',500: 'General Error'},operation_summary="GET Employee State ",operation_description="Get employee state logged in the system. (IsAuthenticated)",)    
+    def get(self, request):
+        try:
+            
+            employee = Employee.objects.get(email=request.user)
+
+        except Employee.DoesNotExist:
+            return Response({"message": "Employee does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        except Employee.MultipleObjectsReturned:
+            return Response({"message": "Multiple Employees with the same id found"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Verificar si el campo 'schedule' es null
+        if not employee.schedule:
+            return Response(0, status=status.HTTP_200_OK)
+        
+        # Obtener la hora actual
+        current_time = datetime.now().time()
+
+        # Comparar la hora actual para determinar el estado del empleado
+        if current_time >= datetime.strptime('00:00', '%H:%M').time() and current_time < datetime.strptime('07:59', '%H:%M').time():
+            employee_state = 1
+        elif current_time >= datetime.strptime('08:00', '%H:%M').time() and current_time < datetime.strptime('12:59', '%H:%M').time():
+            employee_state = 2
+        elif current_time >= datetime.strptime('13:00', '%H:%M').time() and current_time < datetime.strptime('14:59', '%H:%M').time():
+            employee_state = 3
+        elif current_time >= datetime.strptime('15:00', '%H:%M').time() and current_time < datetime.strptime('17:59', '%H:%M').time():
+            employee_state = 4
+        elif current_time >= datetime.strptime('18:00', '%H:%M').time() and current_time <= datetime.strptime('23:59', '%H:%M').time():
+            employee_state = 5
+        else:
+            return Response({"message": "Time out of expected range"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Devolver el estado del empleado según la hora actual
+        return Response(employee_state, status=status.HTTP_200_OK)
