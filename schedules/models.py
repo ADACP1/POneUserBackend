@@ -41,6 +41,7 @@ class Schedule(models.Model):
     notifie = models.BooleanField(null=False)
     notification_channels_ids = models.ManyToManyField(ScheduleNotification, blank=True)
     scheduledetails = models.ManyToManyField(ScheduleDetail)
+    geolocation_required = models.BooleanField(default=False)    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     tenant = models.EmailField()   

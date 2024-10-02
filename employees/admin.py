@@ -19,7 +19,7 @@ class EmployeeAdmin(BaseTenantAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'username', 'password')}),
         ('Personal Info', {'fields': ('name', 'last_name', 'phone_number', 'date_of_birth', 'hire_date')}),
-        ('Company Info', {'fields': ('companies', 'company')}),
+        ('Company Info', {'fields': ('companies', 'company','ubication')}),
         ('Position & Department', {'fields': ('position', 'department')}),
         ('Address Info', {'fields': ('address_line1', 'address_line2', 'city', 'state', 'zip_code', 'country')}),
         ('Verification Info', {'fields': ('email_verified', 'email_verification_token', 'email_verification_token_expires')}),

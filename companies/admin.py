@@ -1,6 +1,6 @@
 # admin.py
 from django.contrib import admin
-from .models import Company
+from .models import Company, Ubication
 
 
 
@@ -8,5 +8,13 @@ from .models import Company
 class CompanyAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'tenant', 'email', 'deleted', 'created_at', 'updated_at')
     search_fields = ('id', 'name', 'email')
+    ordering = ('id', 'name',)
+    readonly_fields = ('created_at', 'updated_at',)
+
+
+@admin.register(Ubication)
+class CompanyAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'longitude', 'latitude', 'deleted', 'company')
+    search_fields = ('id', 'name')
     ordering = ('id', 'name',)
     readonly_fields = ('created_at', 'updated_at',)

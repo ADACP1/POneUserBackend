@@ -47,16 +47,16 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'name', 'last_name', 'email', 'phone_number', 
             'company', 'position', 'department',
-            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','companies'
+            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','companies','ubication'
         )
 
 class ManagersListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = (
-            'id', 'name', 'last_name', 'email', 'phone_number', 'company',
+            'id', 'name', 'last_name', 'email', 'phone_number', 'company','ubication',
             'position', 'department', 'is_manager','date_of_birth', 'hire_date', 
-            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','companies','supervisor','tenant'
+            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','companies','ubication','supervisor','tenant'
         )
 
 
@@ -68,7 +68,7 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
         model = Employee
         fields = (
             'id', 'name', 'last_name', 'email', 'phone_number', 
-            'company', 'position', 'department',
+            'company', 'ubication','position', 'department',
             'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','schedule'
         )
 
@@ -76,7 +76,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = (
-            'id', 'name', 'last_name', 'email', 'phone_number', 'company',
+            'id', 'name', 'last_name', 'email', 'phone_number', 'company','ubication',
             'position', 'department', 'is_manager','date_of_birth', 'hire_date',
             'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','supervisor','tenant','preferred_language','schedule','email_verified'
         )
@@ -98,7 +98,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         model = Employee
         fields = (
             'name', 'last_name', 'email', 'phone_number', 
-            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','supervisor',
+            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','supervisor','company','ubication',
             'position', 'department', 'is_active','schedule'
         )
 

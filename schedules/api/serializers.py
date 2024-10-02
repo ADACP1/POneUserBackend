@@ -21,7 +21,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Schedule
-        fields = ['id', 'name', 'description', 'flexible', 'flex_minutes', 'notifie', 'notification_channels_ids', 'scheduledetails', 'created_at', 'updated_at', 'tenant', 'deleted']
+        fields = ['id', 'name', 'description', 'flexible', 'flex_minutes', 'notifie', 'notification_channels_ids', 'scheduledetails','geolocation_required', 'created_at', 'updated_at', 'tenant', 'deleted']
 
 
 class ScheduleCreateUpdateSerializer(serializers.ModelSerializer):    
@@ -30,7 +30,7 @@ class ScheduleCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Schedule
-        fields = ['id', 'name', 'description', 'flexible', 'flex_minutes', 'notifie', 'notification_channels_ids', 'scheduledetails']
+        fields = ['id', 'name', 'description', 'flexible', 'flex_minutes', 'notifie', 'notification_channels_ids', 'scheduledetails','geolocation_required']
 
     def create(self, validated_data):
         schedule_details_data = validated_data.pop('scheduledetails')

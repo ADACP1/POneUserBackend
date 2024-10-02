@@ -1,5 +1,5 @@
 from django.db import models
-from companies.models import Company
+from companies.models import Company,Ubication
 from schedules.models import Schedule
 from django.contrib.auth.models import AbstractUser
 from django.utils.crypto import get_random_string
@@ -50,6 +50,7 @@ class Employee(AbstractUser):
     hire_date =  models.DateField(null=True,  blank=True)
     companies = models.ManyToManyField(Company,  blank=True , related_name='employee_companies')
     company = models.ForeignKey(Company, on_delete=models.PROTECT, null=True , related_name='employee_company')  
+    ubication = models.ForeignKey(Ubication, on_delete=models.PROTECT, null=True , related_name='employee_ubication')      
     position = models.ForeignKey(Position, on_delete=models.PROTECT, null=True)
     department = models.ForeignKey(Department, on_delete=models.PROTECT, null=True)    
     is_manager = models.BooleanField(default=False)

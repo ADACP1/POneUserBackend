@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 @admin.register(Schedule)
 class ScheduleAdmin(admin.ModelAdmin):
     form = ScheduleAdminForm
-    list_display = ('id', 'name', 'tenant', 'flexible', 'flex_minutes', 'notifie', 'deleted')
+    list_display = ('id', 'name', 'tenant', 'flexible', 'flex_minutes', 'notifie', 'deleted','geolocation_required')
     ordering = ('id', 'name',)
     search_fields = ('name',)
     readonly_fields = ('created_at', 'updated_at',)
