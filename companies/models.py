@@ -31,6 +31,7 @@ class Company(models.Model):
 class Ubication(models.Model):
     id = models.AutoField(primary_key=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='ubications') 
+    tenant = models.EmailField()   
     name = models.CharField(max_length=255) 
     longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)  
     latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True) 

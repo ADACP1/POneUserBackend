@@ -13,8 +13,8 @@ class CompanyAdmin(admin.ModelAdmin):
 
 
 @admin.register(Ubication)
-class CompanyAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'longitude', 'latitude', 'deleted', 'company')
+class UbicationAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'tenant','company','longitude', 'latitude', 'deleted')
     search_fields = ('id', 'name')
     ordering = ('id', 'name',)
     readonly_fields = ('created_at', 'updated_at',)

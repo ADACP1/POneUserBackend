@@ -26,7 +26,7 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
 class UbicationListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ubication
-        fields = 'id','name','longitude','latitude','deleted','created_at','updated_at'
+        fields = 'id','name','longitude','latitude','deleted','created_at','updated_at','company'
 
 class UbicationCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:

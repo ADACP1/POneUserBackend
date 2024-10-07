@@ -42,6 +42,7 @@ urlpatterns = [
     path('api/v1/core/',include('core.api.router')),
     path('api/v1/employees/',include('employees.api.router')),
     path('api/v1/companies/',include('companies.api.router')),
-    path('api/v1/schedules/',include('schedules.api.router'))    
+    path('api/v1/schedules/',include('schedules.api.router')),
+    path('api/v1/clocks/',include('clocks.api.router'))        
 
 ]

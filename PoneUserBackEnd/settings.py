@@ -42,6 +42,7 @@ MY_APPS = [
     'employees',     
     'companies',         
     'schedules',   
+    'clocks',
 ]
 
 OTHER_INSTALLED_APPS = [
