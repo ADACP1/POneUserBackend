@@ -101,23 +101,9 @@ class UbicationListView(APIView):
         serializer = UbicationListSerializer(ubications, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)    
     
-    
-
-class UbicationByCompanyListView(APIView):    
-    permission_classes = [IsAuthenticated]
-    throttle_classes = [UserRateThrottle, AnonRateThrottle]
-    @swagger_auto_schema(responses={200: UbicationListSerializer(many=True)},operation_summary="GET all Ubications of company",operation_description="List all Ubications of company (IsAuthenticated)",)
-    def get(self, request, company_id):     
-        try:
-            company = Company.objects.get(id=company_id, deleted=False, tenant = request.user.tenant)
-        except Company.DoesNotExist:
-            return Response({"message": "Company not found."}, status=status.HTTP_404_NOT_FOUND)                    
-        ubications = Ubication.objects.filter(deleted=False, company=company,tenant=request.user.tenant)
-        serializer = UbicationListSerializer(ubications, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-    @swagger_auto_schema(request_body=UbicationCreateUpdateSerializer,responses={201: UbicationCreateUpdateSerializer(),400: 'Bad request'},operation_summary="CREATE a Ubications",operation_description="Create a Ubications (IsAuthenticated)",)        
-    def post(self, request, company_id):        
+    @swagger_auto_schema(request_body=UbicationCreateUpdateSerializer,responses={201: UbicationCreateUpdateSerializer(),400: 'Bad request'},operation_summary="CREATE a Ubication",operation_description="Create a Ubications (IsAuthenticated)",)        
+    def post(self, request): 
+        company_id = request.data.get('company')       
         try:
             company = Company.objects.get(id=company_id, deleted=False, tenant = request.user.tenant)
         except Company.DoesNotExist:
@@ -127,21 +113,32 @@ class UbicationByCompanyListView(APIView):
             serializer.save(company=company,tenant=request.user.tenant)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
+    
+
+class UbicationByCompanyListView(APIView):    
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    @swagger_auto_schema(responses={200: UbicationListSerializer(many=True)},operation_summary="GET all Ubications of company",operation_description="List all Ubications of company (IsAuthenticated)",)
+    def get(self, request, pk):     
+        try:
+            company = Company.objects.get(id=pk, deleted=False, tenant = request.user.tenant)
+        except Company.DoesNotExist:
+            return Response({"message": "Company not found."}, status=status.HTTP_404_NOT_FOUND)                    
+        ubications = Ubication.objects.filter(deleted=False, company=company,tenant=request.user.tenant)
+        serializer = UbicationListSerializer(ubications, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
 
 class UbicationView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
-    @swagger_auto_schema(request_body=UbicationCreateUpdateSerializer, responses={200: UbicationCreateUpdateSerializer(), 400: 'Bad request'}, operation_summary="UPDATE a Ubication",  operation_description="Update a specific Ubication by ID (IsAuthenticated)")
-    def put(self, request, company_id, ubication_id):
-        try:
-            company = Company.objects.get(id=company_id,tenant = request.user.tenant)
-        except Company.DoesNotExist:
-            return Response({"message": "Company not found."}, status=status.HTTP_404_NOT_FOUND)
+    @swagger_auto_schema(request_body=UbicationCreateUpdateSerializer, responses={200: UbicationCreateUpdateSerializer(), 400: 'Bad request'}, operation_summary="UPDATE a Ubication by id",  operation_description="Update a specific Ubication by ID (IsAuthenticated)")
+    def put(self, request, pk):
 
         try:
-            ubication = Ubication.objects.get(id=ubication_id, company=company,tenant=request.user.tenant)
+            ubication = Ubication.objects.get(id=pk ,tenant=request.user.tenant,deleted = False)
         except Ubication.DoesNotExist:
             return Response({"message": "Ubication not found."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -152,15 +149,12 @@ class UbicationView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(responses={204: 'No Content', 404: 'Not Found'},operation_summary="DELETE a Ubication",operation_description="Mark a specific Ubication as deleted (IsAuthenticated)")
-    def delete(self, request, company_id, ubication_id):
-        try:
-            company = Company.objects.get(id=company_id,tenant = request.user.tenant,deleted=False)
-        except Company.DoesNotExist:
-            return Response({"message": "Company not found."}, status=status.HTTP_404_NOT_FOUND)
 
+
+    @swagger_auto_schema(responses={204: 'No Content', 404: 'Not Found'},operation_summary="DELETE a Ubication by id",operation_description="Mark a specific Ubication as deleted (IsAuthenticated)")
+    def delete(self, request, pk):
         try:
-            ubication = Ubication.objects.get(id=ubication_id, company=company, deleted = False,tenant=request.user.tenant)
+            ubication = Ubication.objects.get(id=pk, deleted = False,tenant=request.user.tenant)
         except Ubication.DoesNotExist:
             return Response({"message": "Ubication not found."}, status=status.HTTP_404_NOT_FOUND)
 

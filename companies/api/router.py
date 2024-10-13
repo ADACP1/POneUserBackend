@@ -4,6 +4,6 @@ urlpatterns = [
     path('companies',CompanyListView.as_view()),
     path('companies/<int:pk>',CompanyView.as_view()),
     path('companies/ubications',UbicationListView.as_view()),    
-    path('companies/<int:company_id>/ubications', UbicationByCompanyListView.as_view()),
-    path('companies/<int:company_id>/ubications/<int:ubication_id>', UbicationView.as_view()),      
+    path('companies/ubications/bycompany/<int:pk>', UbicationByCompanyListView.as_view()),
+    path('companies/ubications/<int:pk>', UbicationView.as_view()),      
 ]

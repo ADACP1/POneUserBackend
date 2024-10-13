@@ -31,4 +31,4 @@ class UbicationListSerializer(serializers.ModelSerializer):
 class UbicationCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ubication
-        fields = 'name','longitude','latitude'
+        fields = 'name','longitude','latitude','company'
