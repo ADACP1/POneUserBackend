@@ -90,6 +90,7 @@ class ScheduleDetailView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK) 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 
     
     
@@ -119,22 +120,13 @@ class ScheduleListView(APIView):
 class ScheduleCreateView(APIView):
     @swagger_auto_schema(request_body=ScheduleCreateUpdateSerializer,responses={201: ScheduleCreateUpdateSerializer(),400: 'Bad request'},operation_summary="CREATE a Schedule",operation_description="Create a Schedule (IsAuthenticated)",)        
     def post(self, request, *args, **kwargs):
-        serializer = ScheduleCreateUpdateSerializer(data=request.data)
+        serializer = ScheduleCreateUpdateSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             # Obtener el tenant del usuario autenticado
             tenant = request.user.tenant  # Ajusta esto si `tenant` es diferente en tu modelo
-            print(tenant)
-
             # Crear el Schedule con el tenant
-            schedule = serializer.save(tenant=tenant)
-            schedulename=schedule.name+' '+str(schedule.id)
-            
-            # Actualizar el tenant en los ScheduleDetail asociados
-            for detail in schedule.scheduledetails.all():
-                detail.name = schedulename
-                detail.tenant = tenant
-                detail.save()
-                
+            serializer.save(tenant=tenant)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -157,24 +149,24 @@ class ScheduleCreateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
 """    
 class ScheduleUpdateView(APIView):
-    @swagger_auto_schema(request_body=ScheduleCreateUpdateSerializer,responses={200: ScheduleCreateUpdateSerializer(),404: 'Schedule does not exist' ,400: 'Bad Request'},operation_summary="UPDATE a Schedule by id",operation_description="Update one Company by id (IsAuthenticated)",)    
+    @swagger_auto_schema(request_body=ScheduleCreateUpdateSerializer, responses={200: ScheduleCreateUpdateSerializer(), 404: 'Schedule does not exist', 400: 'Bad Request'},operation_summary="UPDATE a Schedule by id", operation_description="Update a Schedule by id (IsAuthenticated)",)
     def put(self, request, pk):
         try:
             schedule = Schedule.objects.get(id=pk, deleted=False, tenant=request.user.tenant)
         except Schedule.DoesNotExist:
             return Response({"message": "Schedule does not exist"}, status=status.HTTP_404_NOT_FOUND)
-        serializer = ScheduleCreateUpdateSerializer(schedule, request.data)
+
+        serializer = ScheduleCreateUpdateSerializer(schedule, data=request.data)
         if serializer.is_valid():
-            # Verificar que todos los ScheduleDetails pertenezcan al mismo tenant
-            schedule_details_ids = [detail.id for detail in serializer.validated_data['scheduledetails']]
-            schedule_details = ScheduleDetail.objects.filter(id__in=schedule_details_ids, tenant=request.user.tenant, deleted=False)
-
-            if schedule_details.count() != len(schedule_details_ids):
-                return Response({"message": "All ScheduleDetails must belong to the same tenant as the Schedule."}, status=status.HTTP_400_BAD_REQUEST)
-
+            
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK) 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
 
 class ScheduleView(APIView):
     permission_classes = [IsAuthenticated]
