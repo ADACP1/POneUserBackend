@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Clock
+from .models import Clock, AbsenceType
 
 
 
@@ -9,4 +9,10 @@ class ClockAdmin(admin.ModelAdmin):
     search_fields = ('id', 'employee', 'tenant','type')
     ordering = ('id', 'employee',)
     
+
+@admin.register(AbsenceType)
+class AbsenceTypeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'tenant', 'require_validation', 'require_addittional_info')
+    search_fields = ('id', 'name', 'tenant')
+    ordering = ('id', 'name',)
 

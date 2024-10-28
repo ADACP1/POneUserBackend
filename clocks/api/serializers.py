@@ -1,6 +1,24 @@
 
 from rest_framework import serializers
-from clocks.models import Clock  
+from clocks.models import Clock , AbsenceType, AbsenceEmployee
+    
+
+class AbsenceTypeListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AbsenceType
+        fields = ('id', 'name', 'companies','tenant','require_validation','require_addittional_info','created_at', 'updated_at','deleted')
+
+class AbsenceTypeUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AbsenceType
+        fields = ('name','require_validation','require_addittional_info')
+
+class AbsenceTypeCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AbsenceType
+        fields = ('id', 'name','companies','require_validation','require_addittional_info')          
+
+
 
 
 class ClockListSerializer(serializers.ModelSerializer):
