@@ -470,7 +470,7 @@ class EmployeeCompaniesListView(APIView):
             return Response({"message": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
         
     
-        companies =  employee.companies.all()
+        companies =  employee.companies.filter(deleted=False)
         serializer = CompanyListSerializer(companies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -486,7 +486,7 @@ class EmployeeCompaniesListLiteView(APIView):
             return Response({"message": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
         
 
-        companies =  employee.companies.all()
+        companies =  employee.companies.filter(deleted=False)
         serializer = CompanyListLiteSerializer(companies, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -517,9 +517,7 @@ class EmployeeCompanyListLiteView(APIView):
             return Response({"message": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
         
         serializer = CompanyListLiteSerializer(employee.company)
-        return Response(serializer.data, status=status.HTTP_200_OK)   
-        
-    
+        return Response(serializer.data, status=status.HTTP_200_OK)       
 
     
     
