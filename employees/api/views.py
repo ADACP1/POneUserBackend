@@ -53,7 +53,7 @@ class DepartmentListView(APIView):
 
         if serializer.is_valid(raise_exception=True):
             tenant = request.user.tenant
-            companies = serializer.validated_data.get('companies', [])
+            companies = serializer.validated_data.get('company', [])
             for company in companies:
                 if company.tenant!= tenant or company.deleted == True:
                     return Response(
@@ -87,7 +87,7 @@ class DepartmentView(APIView):
     @swagger_auto_schema(request_body=DepartmentUpdateSerializer,responses={200: DepartmentUpdateSerializer(),404: 'Department does not exist' ,400: 'Bad Request'},operation_summary="UPDATE a Department by id",operation_description="Update one Department by id (IsAuthenticated)",)    
     def put(self, request, pk):
         try:
-            department = Department.objects.get(id=pk, deleted=False, tenant=request.user)
+            department = Department.objects.get(id=pk, deleted=False, tenant=request.user.tenant)
         except Department.DoesNotExist:
             return Response({"message": "Department does not exist"}, status=status.HTTP_404_NOT_FOUND)
         serializer = DepartmentUpdateSerializer(department, request.data)
@@ -101,7 +101,7 @@ class DepartmentView(APIView):
     @swagger_auto_schema(responses={200: 'The Department has been deleted', 404:'Department does not exist'},operation_summary="DELETE a Department by id ",operation_description="Delete one Department by id (IsAuthenticated)",)    
     def delete(self, request, pk):
         try:
-            department = Department.objects.get(id=pk, deleted=False, tenant=request.user)
+            department = Department.objects.get(id=pk, deleted=False, tenant=request.user.tenant)
         except Department.DoesNotExist:
             return Response({"message": "Department does not exist"}, status=status.HTTP_404_NOT_FOUND)
 

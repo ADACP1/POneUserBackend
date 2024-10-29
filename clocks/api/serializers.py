@@ -20,6 +20,17 @@ class AbsenceTypeCreateSerializer(serializers.ModelSerializer):
 
 
 
+class AbsenceEmployeeListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AbsenceEmployee
+        fields = '__all__'  # Incluye todos los campos del modelo
+
+class AbsenceEmployeeCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AbsenceEmployee
+        fields = ['employee', 'absence_type','text','validate']  # Solo incluye longitud y latitud
+
+
 
 class ClockListSerializer(serializers.ModelSerializer):
     class Meta:
@@ -30,10 +41,6 @@ class ClockCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Clock
         fields = ['longitude', 'latitude','type']  # Solo incluye longitud y latitud
-
-    class Meta:
-        model = Clock
-        fields = ['longitude', 'latitude', 'type']  # Incluye 'type' para que se valide correctamente
 
     def validate_type(self, value):
         # Asegurarse de que el tipo sea 'in' o 'out'

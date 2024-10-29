@@ -26,13 +26,10 @@ class AbsenceEmployee(models.Model):
     absence_type = models.ForeignKey(AbsenceType, on_delete=models.PROTECT)
     text = models.TextField()
     validate = models.BooleanField(default=False)
-    filepath = models.FileField(upload_to='absences/')
+    filepath = models.FileField(upload_to='absences/', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)        
     deleted = models.BooleanField(default=False)         
-
-    def __str__(self):
-        return self.name
 
 
 # Create your models here.

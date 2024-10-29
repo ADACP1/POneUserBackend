@@ -3,13 +3,46 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from clocks.models import Clock, AbsenceType
-from clocks.api.serializers import ClockListSerializer, ClockCreateSerializer, AbsenceTypeCreateSerializer, AbsenceTypeUpdateSerializer, AbsenceTypeListSerializer
+from clocks.models import Clock, AbsenceType,AbsenceEmployee
+from clocks.api.serializers import ClockListSerializer, ClockCreateSerializer, AbsenceTypeCreateSerializer, AbsenceTypeUpdateSerializer, AbsenceTypeListSerializer, AbsenceEmployeeCreateSerializer,AbsenceEmployeeListSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from drf_yasg.utils import swagger_auto_schema
 
+class AbsenceEmployeeListView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    @swagger_auto_schema(responses={200: AbsenceEmployeeListSerializer(many=True)},operation_summary="GET all AbsenceEmployee",operation_description="List all AbsenceEmployee  (IsAuthenticated)",)    
+    def get(self, request):
+        absenceemployee = AbsenceEmployee.objects.filter(tenant = request.user.tenant,employee= request.user)
+        serializer = AbsenceEmployeeListSerializer(absenceemployee, many=True) 
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
 
+class AbsenceEmployeeCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]      
+    @swagger_auto_schema(request_body=AbsenceEmployeeCreateSerializer,responses={201: AbsenceEmployeeCreateSerializer(),400: 'Bad request'},operation_summary="CREATE a AbsenceEmployee",operation_description="Create a AbsenceEmployee (IsAuthenticated)",)            
+    def post(self, request):        
+        serializer = AbsenceEmployeeCreateSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+
+            tenant = request.user.tenant
+            employee = serializer.validated_data.get('employee', [])
+            if employee.tenant!= tenant or employee.deleted == True:
+                return Response(
+                    {"message": f"Employee {employee.id} does not belong to your tenant."},
+                    status=status.HTTP_400_BAD_REQUEST
+                    ) 
+
+            absenceemployee = serializer.save(tenant=request.user.tenant, employee=request.user)
+            response_serializer = AbsenceEmployeeListSerializer(absenceemployee)
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
+    
+
+    
 class ClockListView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
@@ -75,10 +108,8 @@ class AbsenceTypeListView(APIView):
 
         if serializer.is_valid(raise_exception=True):
             tenant = request.user.tenant
-            print(tenant)
             companies = serializer.validated_data.get('companies', [])
             for company in companies:
-                print(company.tenant)
                 if company.tenant!= tenant or company.deleted == True:
                     return Response(
                         {"message": f"Company {company.id} does not belong to your tenant."},
