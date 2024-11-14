@@ -14,7 +14,18 @@ class AbsenceEmployeeListView(APIView):
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
     @swagger_auto_schema(responses={200: AbsenceEmployeeListSerializer(many=True)},operation_summary="GET all AbsenceEmployee",operation_description="List all AbsenceEmployee  (IsAuthenticated)",)    
     def get(self, request):
-        absenceemployee = AbsenceEmployee.objects.filter(tenant = request.user.tenant,employee= request.user)
+        # Verificar si el usuario es manager
+        if not request.user.is_manager:
+            return Response(
+                {"message": "You do not have permission to view this resource."},
+                status=status.HTTP_403_FORBIDDEN
+            )        
+        
+        # Obtener las compañías del manager logueado
+        manager_companies = request.user.companies.all()
+
+
+        absenceemployee = AbsenceEmployee.objects.filter(tenant = request.user.tenant,employee__companies__in=manager_companies).distinct()
         serializer = AbsenceEmployeeListSerializer(absenceemployee, many=True) 
         return Response(serializer.data, status=status.HTTP_200_OK)
     
