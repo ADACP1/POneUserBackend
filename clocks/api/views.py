@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from clocks.models import Clock, AbsenceType,AbsenceEmployee
-from clocks.api.serializers import ClockListSerializer, ClockCreateSerializer, AbsenceTypeCreateSerializer, AbsenceTypeUpdateSerializer, AbsenceTypeListSerializer, AbsenceEmployeeCreateSerializer,AbsenceEmployeeListSerializer
+from clocks.api.serializers import ClockListSerializer, ClockCreateSerializer, AbsenceTypeCreateSerializer, AbsenceTypeUpdateSerializer, AbsenceTypeListSerializer, AbsenceEmployeeCreateSerializer,AbsenceEmployeeListSerializer,AbsenceEmployeeValidateSerializer
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from drf_yasg.utils import swagger_auto_schema
@@ -35,10 +35,38 @@ class AbsenceEmployeeCreateView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                     ) 
 
-            absenceemployee = serializer.save(tenant=request.user.tenant, employee=request.user)
+            absenceemployee = serializer.save(tenant=request.user.tenant, employee=request.user, validate=None)
             response_serializer = AbsenceEmployeeListSerializer(absenceemployee)
             return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
+    
+
+class AbsenceEmployeeValidateView(APIView):
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]    
+    @swagger_auto_schema(request_body=AbsenceEmployeeValidateSerializer,
+                         responses={200: 'Success', 404: 'Not found'},
+                         operation_summary="VALIDATE or INVALIDATE an AbsenceEmployee",
+                         operation_description="Validate or invalidate an AbsenceEmployee instance (IsAuthenticated)")
+    def patch(self, request, pk):
+        try:
+            absence_employee = AbsenceEmployee.objects.get(pk=pk, tenant=request.user.tenant)
+        except AbsenceEmployee.DoesNotExist:
+            return Response({"message": "Absence not found or does not belong to your tenant."},
+                            status=status.HTTP_404_NOT_FOUND)
+        
+        # Verificar si el campo validate ya es True o False
+        if absence_employee.validate is not None:
+            return Response(
+                {"message": "This absence has already been validated or invalidated and cannot be changed."},
+                status=status.HTTP_400_BAD_REQUEST
+            )        
+
+        serializer = AbsenceEmployeeValidateSerializer(absence_employee, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
     
 

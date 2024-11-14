@@ -21,14 +21,26 @@ class AbsenceTypeCreateSerializer(serializers.ModelSerializer):
 
 
 class AbsenceEmployeeListSerializer(serializers.ModelSerializer):
+    employee_name = serializers.SerializerMethodField()
+
     class Meta:
         model = AbsenceEmployee
-        fields = '__all__'  # Incluye todos los campos del modelo
+        fields = '__all__' 
+
+
+    def get_employee_name(self, obj):
+        return obj.employee.name +' '+ obj.employee.last_name        
 
 class AbsenceEmployeeCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AbsenceEmployee
-        fields = ['employee', 'absence_type','text','validate']  # Solo incluye longitud y latitud
+        fields = ['employee', 'absence_type','text']  # Solo incluye longitud y latitud
+
+
+class AbsenceEmployeeValidateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AbsenceEmployee
+        fields = ['validate']        
 
 
 
