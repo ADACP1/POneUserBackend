@@ -24,7 +24,7 @@ class AbsenceEmployee(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.PROTECT)
     tenant = models.EmailField()   
     absence_type = models.ForeignKey(AbsenceType, on_delete=models.PROTECT)
-    text = models.TextField()
+    text = models.TextField(blank=True, null=True)
     validate = models.BooleanField(null=True, default=None)
     filepath = models.FileField(upload_to='absences/', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

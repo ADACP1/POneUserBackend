@@ -22,7 +22,7 @@ class AbsenceEmployeeListView(APIView):
             )        
         
         # Obtener las compañías del manager logueado
-        manager_companies = request.user.companies.all()
+        manager_companies = request.user.companies.filter(deleted=False)
 
 
         absenceemployee = AbsenceEmployee.objects.filter(tenant = request.user.tenant,employee__companies__in=manager_companies).distinct()
@@ -39,7 +39,7 @@ class AbsenceEmployeeCreateView(APIView):
         if serializer.is_valid():
 
             tenant = request.user.tenant
-            employee = serializer.validated_data.get('employee', [])
+            employee = request.user #serializer.validated_data.get('employee', [])
             if employee.tenant!= tenant or employee.deleted == True:
                 return Response(
                     {"message": f"Employee {employee.id} does not belong to your tenant."},

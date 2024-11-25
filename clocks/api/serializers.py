@@ -22,6 +22,8 @@ class AbsenceTypeCreateSerializer(serializers.ModelSerializer):
 
 class AbsenceEmployeeListSerializer(serializers.ModelSerializer):
     employee_name = serializers.SerializerMethodField()
+    absence_type_name = serializers.SerializerMethodField()  # Campo para el nombre del tipo de ausencia
+    created_at = serializers.SerializerMethodField()  #    
 
     class Meta:
         model = AbsenceEmployee
@@ -30,11 +32,33 @@ class AbsenceEmployeeListSerializer(serializers.ModelSerializer):
 
     def get_employee_name(self, obj):
         return obj.employee.name +' '+ obj.employee.last_name        
+    
+    def get_absence_type_name(self, obj):
+        # Devuelve el nombre del tipo de ausencia
+        return obj.absence_type.name
+
+    def get_created_at(self, obj):
+        # Devuelve solo la fecha de created_at en formato 'YYYY-MM-DD'
+        return obj.created_at.strftime('%Y-%m-%d')    
 
 class AbsenceEmployeeCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AbsenceEmployee
-        fields = ['employee', 'absence_type','text']  # Solo incluye longitud y latitud
+        fields = ['absence_type','text']  # Solo incluye longitud y latitud
+
+    def validate(self, data):
+        # Obtén el tipo de ausencia
+        absence_type = data.get('absence_type')
+
+        # Verifica si el tipo de ausencia requiere validación y si el texto es suficiente
+        if absence_type and absence_type.require_addittional_info:
+            text = data.get('text', '')
+
+            # Verifica que el campo text tenga al menos 5 caracteres
+            if len(text) < 5:
+                raise serializers.ValidationError({"message": "This absence type requires additional information"})
+
+        return data        
 
 
 class AbsenceEmployeeValidateSerializer(serializers.ModelSerializer):
