@@ -37,6 +37,7 @@ class Clock(models.Model):
     TYPE_CHOICES = [
         ('in', 'Clock In'),
         ('out', 'Clock Out'),
+        ('abs', 'Absence'),        
     ]
 
     id = models.AutoField(primary_key=True)

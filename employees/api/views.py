@@ -201,7 +201,7 @@ class ManagerListView(APIView):
         #companies = Company.objects.filter(tenant = request.user, deleted=False)
         if request.user.tenant == 'sincro@adachr.com':
             gettenant = request.query_params.get('tenant')        
-            manager = Employee.objects.filter(tenant = gettenant, deleted=False, is_manager=True).order_by('name')
+            manager = Employee.objects.filter(tenant = gettenant, deleted=False, is_manager=True, companies__deleted=False).order_by('name')
             serializer = ManagersListSerializer(manager, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:

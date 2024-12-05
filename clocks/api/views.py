@@ -25,7 +25,7 @@ class AbsenceEmployeeListView(APIView):
         manager_companies = request.user.companies.filter(deleted=False)
 
 
-        absenceemployee = AbsenceEmployee.objects.filter(tenant = request.user.tenant,employee__companies__in=manager_companies).distinct()
+        absenceemployee = AbsenceEmployee.objects.filter(tenant = request.user.tenant,employee__company__in=manager_companies).distinct()
         serializer = AbsenceEmployeeListSerializer(absenceemployee, many=True) 
         return Response(serializer.data, status=status.HTTP_200_OK)
     
