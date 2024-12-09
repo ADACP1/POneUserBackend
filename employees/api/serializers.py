@@ -51,14 +51,20 @@ class ManagerCreateSerializer(serializers.ModelSerializer):
         )
 
 class ManagersListSerializer(serializers.ModelSerializer):
+    companies = serializers.SerializerMethodField()
+
     class Meta:
         model = Employee
         fields = (
-            'id', 'name', 'last_name', 'email', 'phone_number', 'company','ubication',
-            'position', 'department', 'is_manager','date_of_birth', 'hire_date', 
-            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country','companies','ubication','supervisor','tenant'
+            'id', 'name', 'last_name', 'email', 'phone_number', 'company', 'ubication',
+            'position', 'department', 'is_manager', 'date_of_birth', 'hire_date', 
+            'address_line1', 'address_line2', 'state', 'zip_code', 'city', 'country', 
+            'companies', 'ubication', 'supervisor', 'tenant'
         )
 
+    def get_companies(self, obj):
+        # Devuelve una lista de IDs de las empresas no eliminadas
+        return obj.companies.filter(deleted=False).values_list('id', flat=True)
 
 
 
